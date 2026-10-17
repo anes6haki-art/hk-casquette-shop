@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  productTitle String  @default("Produit")
+  wilaya      String
+  commune     String
+  quantity    Int
+  unitPrice   Int
+  shippingFee Int
+  deliveryType String  @default("HOME")
+  totalPrice  Int
+  status      String   @default("PENDING")
+  trackingNumber String?
+  deliveryStatus String?
+  items       OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model ShippingRate {
+  wilaya    String   @id
+  homePrice Int      @default(600)
+  deskPrice Int      @default(300)
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  originalPrice   Int
+  discountedPrice Int
+  stockQuantity   Int
+  imageUrls       String   @default("[]")
+  isActive        Boolean  @default(false)
+  variants        ProductVariant[]
+  orderItems      OrderItem[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive, updatedAt])
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  colorName String
+  colorHex  String
+  images    String   @default("[]")
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String?
+  title     String
+  color     String
+  size      String
+  quantity  Int
+  unitPrice Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+}
