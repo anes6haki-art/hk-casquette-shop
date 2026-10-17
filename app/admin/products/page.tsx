@@ -42,7 +42,7 @@ export default async function AdminProductsPage() {
         </div>
         {productsError ? (
           <p className="admin-data-error" role="alert">
-            Impossible de charger les produits. Vérifiez la connexion SQLite puis lancez « npx prisma db push ».
+            Impossible de charger les produits. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
           </p>
         ) : (
           <ProductsManager products={products} />

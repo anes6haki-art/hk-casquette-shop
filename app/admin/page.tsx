@@ -82,7 +82,7 @@ export default async function AdminDashboardPage() {
 
         {ordersError && (
           <p className="admin-data-error" role="alert">
-            Impossible de charger les commandes. Vérifiez la connexion SQLite puis lancez « npx prisma db push ».
+            Impossible de charger les commandes. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
           </p>
         )}
         {!ordersError && <div className="admin-stats">
@@ -176,7 +176,7 @@ export default async function AdminDashboardPage() {
 
         {shippingRatesError && (
           <p className="admin-data-error" role="alert">
-            Impossible de charger les tarifs de livraison. Vérifiez la connexion SQLite puis lancez « npx prisma db push ».
+            Impossible de charger les tarifs de livraison. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
           </p>
         )}
         {!shippingRatesError && <section className="admin-table-card shipping-settings-card" aria-labelledby="shipping-settings-title">
