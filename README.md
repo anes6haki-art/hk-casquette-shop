@@ -1,6 +1,6 @@
 # Hk casquette shop
 
-French-language multi-product casquette storefront and order dashboard for customers across Algeria, built with Next.js App Router, Tailwind CSS, and Prisma with SQLite.
+French-language multi-product casquette storefront and order dashboard for customers across Algeria, built with Next.js App Router, Tailwind CSS, and Prisma with PostgreSQL.
 
 ## Local setup
 
@@ -20,10 +20,10 @@ French-language multi-product casquette storefront and order dashboard for custo
 
    If `ADMIN_PASSWORD` is unset in local development, the dashboard also accepts `admin123`. Production requires an explicitly configured password (at least 12 characters) and session secret.
 
-3. Create the local SQLite database and apply migrations:
+3. Push the Prisma schema to the PostgreSQL database configured by `DATABASE_URL`:
 
    ```bash
-   npm run db:migrate -- --name init
+   npx prisma db push
    ```
 
 4. (Optional) Add ten sample caps and generated local sample images:
@@ -44,7 +44,7 @@ The storefront is available at `http://localhost:3000`; product detail and order
 
 ## Orders and administration
 
-The home page lists every active casquette. Each product has a detail page with its image gallery, stock status, description, and cash-on-delivery checkout. Checkout submissions are validated and stored on the server in SQLite, including the product title and price snapshot. The dashboard lists orders newest first and lets an administrator update each order to Pending, Confirmed, Shipped, Delivered, or Cancelled. Delivery prices can be edited for home and Stop Desk delivery for each wilaya; checkout loads the selected wilaya's current rates and the server recalculates the final order total. The commune dropdown loads locally and contains all 1,541 communes across the store's 58 Wilayas; the server also validates that a selected commune belongs to the selected Wilaya. Admin sessions use an HTTP-only, signed cookie and expire after eight hours; dashboard reads and updates check the session on the server.
+The home page lists every active casquette. Each product has a detail page with its image gallery, stock status, description, and cash-on-delivery checkout. Checkout submissions are validated and stored in PostgreSQL, including the product title and price snapshot. The dashboard lists orders newest first and lets an administrator update each order to Pending, Confirmed, Shipped, Delivered, or Cancelled. Delivery prices can be edited for home and Stop Desk delivery for each wilaya; checkout loads the selected wilaya's current rates and the server recalculates the final order total. The commune dropdown loads locally and contains all 1,541 communes across the store's 58 Wilayas; the server also validates that a selected commune belongs to the selected Wilaya. Admin sessions use an HTTP-only, signed cookie and expire after eight hours; dashboard reads and updates check the session on the server.
 
 The `/admin/products` page lets administrators create, edit, activate, and delete casquettes. Images can be uploaded directly from the product form (JPEG, PNG, WebP, or AVIF; up to 5 MB per image and 8 images per product) and are stored under `public/uploads`; the form also accepts existing HTTP(S) image URLs. Every active product appears in the storefront catalog. Checkout uses its discounted price and decrements stock when an order is saved.
 
@@ -54,7 +54,7 @@ Confirmed orders can be submitted to the DHD endpoint from the dashboard. Set `D
 
 The homepage hero uses a local photograph of a blue baseball cap from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Baseball_cap.jpg); the image is public domain.
 
-For production, run `npm run db:deploy` to apply committed migrations. SQLite and uploaded images need persistent, writable storage: back up the database securely and do not use an ephemeral serverless filesystem for production order storage or image uploads. The database contains customer names, phone numbers, and delivery addresses, so protect the database file and backups as sensitive personal data.
+For Vercel, set `DATABASE_URL` in the project's Environment Variables to the PostgreSQL connection string, then ensure the Prisma schema has been pushed to that same database with `npx prisma db push`. Do not use `npm run db:deploy` for this PostgreSQL schema: the checked-in migration history was created for SQLite. Set the required admin and session secrets in Vercel as well; never commit `.env`. Uploaded images are written to `public/uploads`, which is not persistent storage on Vercel, so use durable object storage for production uploads. The database contains customer names, phone numbers, and delivery addresses, so protect the database and backups as sensitive personal data.
 
 ## Available commands
 
