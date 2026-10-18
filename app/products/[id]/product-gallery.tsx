@@ -1,15 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { getColorLabelAr, getProductTitleAr, ORDER_SIZE_LABELS_AR, type ProductVariantDto } from "@/lib/store-data";
-import { useCart, type CartVariantOption } from "@/app/cart/cart-context";
-
-const PRODUCT_SIZES = ["Standard", "S", "M", "L"] as const;
-
-function formatPrice(amount: number) {
-  return `${new Intl.NumberFormat("ar-DZ").format(amount)} دج`;
-}
+import { useEffect, useState } from "react";
+import { getColorLabelAr, getProductTitleAr, type ProductVariantDto } from "@/lib/store-data";
 
 function CapIllustration() {
   return (
@@ -23,60 +16,40 @@ function CapIllustration() {
 
 export default function ProductGallery({
   title,
-  productId,
-  price,
-  stockQuantity,
   imageUrls,
   variants,
+  selectedVariantIndex,
+  onSelectVariant,
 }: {
   title: string;
-  productId: string;
-  price: number;
-  stockQuantity: number;
   imageUrls: string[];
   variants: ProductVariantDto[];
+  selectedVariantIndex: number;
+  onSelectVariant: (index: number) => void;
 }) {
-  const { addItem } = useCart();
-  const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<(typeof PRODUCT_SIZES)[number]>("Standard");
-  const [quantity, setQuantity] = useState(1);
-  const [added, setAdded] = useState(false);
   const selectedVariant = variants[selectedVariantIndex];
   const images = (selectedVariant?.images ?? imageUrls).filter(Boolean);
   const activeImage = images[selectedImage] ?? images[0];
 
+  useEffect(() => {
+    setSelectedImage(0);
+  }, [selectedVariantIndex]);
+
   return (
     <div className="product-gallery">
-      {variants.length > 0 && (
-        <div className="product-color-selector" role="group" aria-label="اختيار اللون">
-          <span className="product-color-label">
-            اللون: <strong>{selectedVariant ? getColorLabelAr(selectedVariant.colorName) : ""}</strong>
-          </span>
-          <div className="product-color-options">
-            {variants.map((variant, index) => (
-              <button
-                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}`}
-                key={variant.id}
-                type="button"
-                onClick={() => {
-                  setSelectedVariantIndex(index);
-                  setSelectedImage(0);
-                }}
-                aria-label={`${getColorLabelAr(variant.colorName)}, ${variant.colorHex}`}
-                aria-pressed={selectedVariantIndex === index}
-                title={`${getColorLabelAr(variant.colorName)} (${variant.colorHex})`}
-              >
-                <span className="product-color-swatch" style={{ backgroundColor: variant.colorHex }} />
-                <span>{getColorLabelAr(variant.colorName)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="product-gallery-main">
         {activeImage
-          ? <Image src={activeImage} alt={`${getProductTitleAr(title)}${selectedVariant ? ` - ${getColorLabelAr(selectedVariant.colorName)}` : ""} - الصورة ${selectedImage + 1}`} fill priority unoptimized sizes="(max-width: 800px) 100vw, 52vw" />
+          ? (
+            <Image
+              src={activeImage}
+              alt={`${getProductTitleAr(title)}${selectedVariant ? ` - ${getColorLabelAr(selectedVariant.colorName)}` : ""} - الصورة ${selectedImage + 1}`}
+              fill
+              priority
+              unoptimized
+              sizes="(max-width: 800px) 100vw, 52vw"
+            />
+          )
           : <CapIllustration />}
       </div>
       {images.length > 1 && (
@@ -95,57 +68,28 @@ export default function ProductGallery({
           ))}
         </div>
       )}
-      <div className="product-add-cart-panel">
-        <div className="product-add-cart-size">
-          <span>اختاروا المقاس</span>
-          <div className="order-size-options">
-            {PRODUCT_SIZES.map((size) => (
+      {variants.length > 0 && (
+        <div className="product-color-selector" role="group" aria-label="اختيار اللون">
+          <span className="product-color-label">
+            اللون: <strong>{selectedVariant ? getColorLabelAr(selectedVariant.colorName) : ""}</strong>
+          </span>
+          <div className="product-color-options">
+            {variants.map((variant, index) => (
               <button
-                className={`order-size-option${selectedSize === size ? " is-selected" : ""}`}
-                key={size}
+                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}`}
+                key={variant.id}
                 type="button"
-                onClick={() => setSelectedSize(size)}
-                aria-pressed={selectedSize === size}
+                onClick={() => onSelectVariant(index)}
+                aria-label={getColorLabelAr(variant.colorName)}
+                aria-pressed={selectedVariantIndex === index}
               >
-                {ORDER_SIZE_LABELS_AR[size]}
+                <span className="product-color-swatch" style={{ backgroundColor: variant.colorHex }} />
+                <span>{getColorLabelAr(variant.colorName)}</span>
               </button>
             ))}
           </div>
         </div>
-        <div className="product-add-cart-actions">
-          <div className="quantity-control" aria-label={`الكمية: ${quantity}`}>
-            <button type="button" onClick={() => setQuantity((current) => Math.max(1, current - 1))} disabled={quantity <= 1} aria-label="تقليل الكمية">−</button>
-            <output aria-live="polite">{quantity}</output>
-            <button type="button" onClick={() => setQuantity((current) => Math.min(Math.min(10, stockQuantity), current + 1))} disabled={quantity >= Math.min(10, stockQuantity)} aria-label="زيادة الكمية">+</button>
-          </div>
-          <button
-            className="product-add-cart-button"
-            type="button"
-            disabled={stockQuantity < 1 || quantity > stockQuantity}
-            onClick={() => {
-              addItem({
-                productId,
-                ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
-                title,
-                price,
-                selectedColor: selectedVariant?.colorName ?? "Standard",
-                selectedSize,
-                quantity,
-                image: activeImage ?? imageUrls[0] ?? "",
-                variants: variants.map((variant): CartVariantOption => ({
-                  variantId: variant.id,
-                  color: variant.colorName,
-                  image: variant.images[0] ?? imageUrls[0] ?? "",
-                })),
-              });
-              setAdded(true);
-              window.setTimeout(() => setAdded(false), 1800);
-            }}
-          >
-            {stockQuantity < 1 ? "غير متوفر" : added ? "أُضيف إلى السلة ✓" : `أضف إلى السلة · ${formatPrice(price * quantity)}`}
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
