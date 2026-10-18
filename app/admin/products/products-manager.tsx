@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useTransition, type ChangeEvent, type FormEvent } from "react";
-import type { ProductDto } from "@/lib/store-data";
+import { getProductDescriptionAr, getProductTitleAr, type ProductDto } from "@/lib/store-data";
 import { deleteProductAction, saveProductAction } from "./actions";
 
 type ProductForm = {
@@ -68,7 +68,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
 
   function addVariant() {
     if (form.variants.length >= 12) {
-      setError("Ajoutez au maximum 12 couleurs par produit.");
+      setError("يمكن إضافة 12 لوناً كحد أقصى لكل منتج.");
       return;
     }
     setForm((current) => ({
@@ -113,7 +113,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
 
     const existingImageCount = parseImageUrls(form.imageUrls).length;
     if (existingImageCount + files.length > 8) {
-      setError("Ajoutez au maximum 8 images au total.");
+      setError("يمكن إضافة 8 صور كحد أقصى.");
       return;
     }
 
@@ -129,7 +129,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       });
       const result: { imageUrls?: string[]; error?: string } = await response.json();
       if (!response.ok || !result.imageUrls) {
-        setError(result.error ?? "Impossible d’envoyer les images.");
+        setError(result.error ?? "تعذر رفع الصور.");
         return;
       }
 
@@ -138,10 +138,10 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
         const imageUrls = parseImageUrls(current.imageUrls);
         return { ...current, imageUrls: [...imageUrls, ...uploadedUrls].join("\n") };
       });
-      setSuccess(`${uploadedUrls.length} image${uploadedUrls.length === 1 ? "" : "s"} envoyée${uploadedUrls.length === 1 ? "" : "s"}.`);
+      setSuccess(`تم رفع ${uploadedUrls.length} صورة.`);
     } catch (uploadError) {
       console.error("Unable to upload product images:", uploadError);
-      setError("Échec de l’envoi. Vérifiez votre connexion et réessayez.");
+      setError("فشل الرفع. تحققوا من الاتصال وحاولوا مجدداً.");
     } finally {
       setIsUploading(false);
     }
@@ -155,7 +155,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
 
     const existingImageCount = parseImageUrls(form.variants[index]?.images ?? "").length;
     if (existingImageCount + files.length > 8) {
-      setError("Ajoutez au maximum 8 photos par couleur.");
+      setError("يمكن إضافة 8 صور كحد أقصى لكل لون.");
       return;
     }
 
@@ -168,7 +168,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       const response = await fetch("/admin/products/upload", { method: "POST", body: uploadData });
       const result: { imageUrls?: string[]; error?: string } = await response.json();
       if (!response.ok || !result.imageUrls) {
-        setError(result.error ?? "Impossible d’envoyer les images.");
+        setError(result.error ?? "تعذر رفع الصور.");
         return;
       }
       const uploadedUrls = result.imageUrls;
@@ -181,10 +181,10 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
             : variant,
         ),
       }));
-      setSuccess(`${uploadedUrls.length} photo${uploadedUrls.length === 1 ? "" : "s"} ajoutée${uploadedUrls.length === 1 ? "" : "s"} à la couleur.`);
+      setSuccess(`تمت إضافة ${uploadedUrls.length} صورة إلى اللون.`);
     } catch (uploadError) {
       console.error("Unable to upload product variant images:", uploadError);
-      setError("Échec de l’envoi. Vérifiez votre connexion et réessayez.");
+      setError("فشل الرفع. تحققوا من الاتصال وحاولوا مجدداً.");
     } finally {
       setIsUploading(false);
     }
@@ -196,12 +196,12 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
     setSuccess(null);
     const imageUrls = parseImageUrls(form.imageUrls);
     if (imageUrls.length > 8) {
-      setError("Ajoutez au maximum 8 images au total.");
+      setError("يمكن إضافة 8 صور كحد أقصى.");
       return;
     }
     const numericFields = [form.originalPrice, form.discountedPrice, form.stockQuantity];
     if (numericFields.some((value) => !/^\d+$/.test(value))) {
-      setError("Les prix et le stock doivent être des nombres entiers.");
+      setError("يجب أن تكون الأسعار والكمية أعداداً صحيحة.");
       return;
     }
 
@@ -230,12 +230,12 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
         return;
       }
       setForm(emptyForm);
-      setSuccess(input.id ? "Produit modifié avec succès." : "Produit créé avec succès.");
+      setSuccess(input.id ? "تم تعديل المنتج بنجاح." : "تم إنشاء المنتج بنجاح.");
     });
   }
 
   function handleDelete(product: ProductDto) {
-    if (!window.confirm(`Supprimer « ${product.title} » ? Cette action est définitive.`)) return;
+    if (!window.confirm(`حذف « ${getProductTitleAr(product.title)} »؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
     setError(null);
     setSuccess(null);
     startTransition(async () => {
@@ -245,7 +245,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
         return;
       }
       if (form.id === product.id) setForm(emptyForm);
-      setSuccess("Produit supprimé.");
+      setSuccess("تم حذف المنتج.");
     });
   }
 
@@ -268,7 +268,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
         setError(result.error);
         return;
       }
-      setSuccess(`${product.title} est maintenant disponible dans le catalogue.`);
+      setSuccess(`أصبح ${getProductTitleAr(product.title)} متاحاً في الكتالوج.`);
     });
   }
 
@@ -277,34 +277,34 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       <section className="admin-table-card product-editor-card" id="product-editor" aria-labelledby="product-editor-title">
         <div className="admin-table-heading">
           <div>
-            <h2 id="product-editor-title">{form.id ? "Modifier le produit" : "Ajouter un produit"}</h2>
-            <p>Les casquettes actives sont visibles dans le catalogue public.</p>
+            <h2 id="product-editor-title">{form.id ? "تعديل المنتج" : "إضافة منتج"}</h2>
+            <p>تظهر القبعات المفعّلة في كتالوج المتجر.</p>
           </div>
         </div>
         <form className="product-editor-form" onSubmit={handleSubmit}>
           <div className="product-form-grid">
             <label className="product-field product-field-wide">
-              <span>Titre</span>
+              <span>اسم المنتج</span>
               <input maxLength={120} required value={form.title} onChange={(event) => updateField("title", event.currentTarget.value)} />
             </label>
             <label className="product-field product-field-wide">
-              <span>Description</span>
+              <span>الوصف</span>
               <textarea maxLength={4000} rows={4} required value={form.description} onChange={(event) => updateField("description", event.currentTarget.value)} />
             </label>
             <label className="product-field">
-              <span>Prix original (DA)</span>
+              <span>السعر الأصلي (دج)</span>
               <input type="number" min="1" max="100000000" step="1" required value={form.originalPrice} onChange={(event) => updateField("originalPrice", event.currentTarget.value)} />
             </label>
             <label className="product-field">
-              <span>Prix remisé (DA)</span>
+              <span>السعر بعد التخفيض (دج)</span>
               <input type="number" min="1" max="100000000" step="1" required value={form.discountedPrice} onChange={(event) => updateField("discountedPrice", event.currentTarget.value)} />
             </label>
             <label className="product-field">
-              <span>Quantité en stock</span>
+              <span>الكمية في المخزون</span>
               <input type="number" min="0" max="1000000" step="1" required value={form.stockQuantity} onChange={(event) => updateField("stockQuantity", event.currentTarget.value)} />
             </label>
             <label className="product-field product-field-wide">
-              <span>Choisir des photos sur votre appareil</span>
+              <span>اختيار صور من جهازكم</span>
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
@@ -312,22 +312,22 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                 disabled={isUploading || isPending}
                 onChange={handleImageUpload}
               />
-              <small>JPEG, PNG, WebP ou AVIF · 5 Mo maximum par image · 8 photos au total.</small>
+              <small>JPEG أو PNG أو WebP أو AVIF · 5 ميغابايت كحد أقصى للصورة · 8 صور إجمالاً.</small>
             </label>
             <label className="product-field product-field-wide">
-              <span>Photos du produit (une URL par ligne, maximum 8)</span>
+              <span>صور المنتج (رابط واحد في كل سطر، 8 كحد أقصى)</span>
               <textarea rows={3} placeholder={"https://exemple.com/image-produit.jpg\nhttps://exemple.com/autre-image.jpg"} value={form.imageUrls} onChange={(event) => updateField("imageUrls", event.currentTarget.value)} />
-              <small>{parseImageUrls(form.imageUrls).length}/8 photos. Les photos envoyées sont ajoutées ici automatiquement. Vous pouvez aussi saisir plusieurs URL HTTP ou HTTPS, une par ligne.</small>
+              <small>{parseImageUrls(form.imageUrls).length}/8 صور. تضاف الصور المرفوعة هنا تلقائياً. يمكنكم أيضاً إدخال روابط HTTP أو HTTPS، رابطاً في كل سطر.</small>
             </label>
           </div>
           <section className="product-variants-editor" aria-labelledby="product-variants-title">
             <div className="product-variants-heading">
               <div>
-                <h3 id="product-variants-title">Couleurs et photos associées</h3>
-                <p>Chaque couleur affiche sa propre galerie sur la fiche produit.</p>
+                <h3 id="product-variants-title">الألوان والصور المرتبطة</h3>
+                <p>يظهر معرض خاص لكل لون في صفحة المنتج.</p>
               </div>
               <button type="button" onClick={addVariant} disabled={isPending || isUploading || form.variants.length >= 12}>
-                Ajouter une couleur
+                إضافة لون
               </button>
             </div>
             {form.variants.map((variant, index) => {
@@ -335,7 +335,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
               return (
                 <div className="product-variant-editor" key={index}>
                   <div className="product-variant-heading">
-                    <strong>Couleur {index + 1}</strong>
+                    <strong>اللون {index + 1}</strong>
                     <button
                       className="product-delete-button"
                       type="button"
@@ -345,21 +345,21 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                       }))}
                       disabled={isPending || isUploading}
                     >
-                      Supprimer la couleur
+                      حذف اللون
                     </button>
                   </div>
                   <div className="product-form-grid">
                     <label className="product-field">
-                      <span>Nom de la couleur</span>
+                      <span>اسم اللون</span>
                       <input
                         maxLength={40}
-                        placeholder="Noir, Terracotta…"
+                        placeholder="أسود، طوبي…"
                         value={variant.colorName}
                         onChange={(event) => updateVariant(index, "colorName", event.currentTarget.value)}
                       />
                     </label>
                     <label className="product-field">
-                      <span>Code couleur</span>
+                      <span>رمز اللون</span>
                       <input
                         type="color"
                         value={variant.colorHex}
@@ -367,7 +367,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                       />
                     </label>
                     <label className="product-field product-field-wide">
-                      <span>Photos de cette couleur</span>
+                      <span>صور هذا اللون</span>
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/avif"
@@ -375,28 +375,28 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                         disabled={isUploading || isPending}
                         onChange={(event) => void handleVariantImageUpload(index, event)}
                       />
-                      <small>Jusqu’à 8 photos JPEG, PNG, WebP ou AVIF · 5 Mo maximum par photo.</small>
+                      <small>حتى 8 صور بصيغة JPEG أو PNG أو WebP أو AVIF · 5 ميغابايت كحد أقصى للصورة.</small>
                     </label>
                     <label className="product-field product-field-wide">
-                      <span>URL des photos (une par ligne)</span>
+                      <span>روابط الصور (رابط واحد في كل سطر)</span>
                       <textarea
                         rows={3}
                         placeholder={"https://exemple.com/casquette-noire.jpg\nhttps://exemple.com/detail-broderie.jpg"}
                         value={variant.images}
                         onChange={(event) => updateVariant(index, "images", event.currentTarget.value)}
                       />
-                      <small>{variantImages.length}/8 photos pour cette couleur.</small>
+                      <small>{variantImages.length}/8 صور لهذا اللون.</small>
                     </label>
                   </div>
                   {variantImages.length > 0 && (
-                    <div className="product-image-previews" aria-label={`Aperçu des photos de la couleur ${variant.colorName || index + 1}`}>
+                    <div className="product-image-previews" aria-label={`معاينة صور اللون ${variant.colorName || index + 1}`}>
                       {variantImages.map((imageUrl, imageIndex) => (
                         <div className="product-image-preview" key={`${imageUrl}-${imageIndex}`}>
                           <Image src={imageUrl} alt={`Photo ${imageIndex + 1} de ${variant.colorName || `la couleur ${index + 1}`}`} width={52} height={52} unoptimized />
-                          <span>Photo {imageIndex + 1}</span>
+                          <span>الصورة {imageIndex + 1}</span>
                           <button
                             type="button"
-                            aria-label={`Retirer la photo ${imageIndex + 1} de ${variant.colorName || `la couleur ${index + 1}`}`}
+                            aria-label={`إزالة الصورة ${imageIndex + 1} من اللون ${variant.colorName || index + 1}`}
                             disabled={isPending || isUploading}
                             onClick={() => updateVariant(
                               index,
@@ -404,7 +404,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                               variantImages.filter((_, photoIndex) => photoIndex !== imageIndex).join("\n"),
                             )}
                           >
-                            Retirer
+                            إزالة
                           </button>
                         </div>
                       ))}
@@ -415,21 +415,21 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
             })}
           </section>
           {parseImageUrls(form.imageUrls).length > 0 && (
-            <div className="product-image-previews" aria-label="Aperçu des photos du produit">
+            <div className="product-image-previews" aria-label="معاينة صور المنتج">
               {parseImageUrls(form.imageUrls).map((imageUrl, index) => (
                 <div className="product-image-preview" key={`${imageUrl}-${index}`}>
                   <Image src={imageUrl} alt={`Aperçu de la photo ${index + 1}`} width={52} height={52} unoptimized />
-                  <span>Photo {index + 1}</span>
+                  <span>الصورة {index + 1}</span>
                   <button
                     type="button"
-                    aria-label={`Retirer la photo ${index + 1}`}
+                    aria-label={`إزالة الصورة ${index + 1}`}
                     disabled={isPending || isUploading}
                     onClick={() => updateField(
                       "imageUrls",
                       parseImageUrls(form.imageUrls).filter((_, imageIndex) => imageIndex !== index).join("\n"),
                     )}
                   >
-                    Retirer
+                    إزالة
                   </button>
                 </div>
               ))}
@@ -437,15 +437,15 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
           )}
           <label className="product-active-toggle">
             <input type="checkbox" checked={form.isActive} onChange={(event) => updateField("isActive", event.currentTarget.checked)} />
-            <span>Afficher cette casquette dans le catalogue</span>
+            <span>عرض هذه القبعة في الكتالوج</span>
           </label>
           {error && <p className="product-action-error" role="alert">{error}</p>}
           {success && <p className="product-action-success" role="status">{success}</p>}
           <div className="product-form-actions">
             <button className="admin-primary-button" type="submit" disabled={isPending || isUploading}>
-              {isUploading ? "Envoi des photos…" : isPending ? "Enregistrement…" : form.id ? "Enregistrer les modifications" : "Créer le produit"}
+              {isUploading ? "جارٍ رفع الصور…" : isPending ? "جارٍ الحفظ…" : form.id ? "حفظ التعديلات" : "إنشاء المنتج"}
             </button>
-            {form.id && <button className="product-cancel-button" type="button" onClick={resetForm} disabled={isPending || isUploading}>Annuler</button>}
+            {form.id && <button className="product-cancel-button" type="button" onClick={resetForm} disabled={isPending || isUploading}>إلغاء</button>}
           </div>
         </form>
       </section>
@@ -453,15 +453,15 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       <section className="products-list-section" aria-labelledby="products-list-title">
         <div className="products-list-heading">
           <div>
-            <h2 id="products-list-title">Vos produits</h2>
-            <p>Activez les casquettes que vous souhaitez proposer à vos clients.</p>
+            <h2 id="products-list-title">منتجاتكم</h2>
+            <p>فعّلوا القبعات التي ترغبون في عرضها على العملاء.</p>
           </div>
         </div>
         {products.length === 0 ? (
           <div className="admin-table-card admin-empty">
             <span aria-hidden="true">✳</span>
-            <strong>Votre catalogue est vide</strong>
-            <p>Ajoutez une casquette pour commencer à remplir votre catalogue.</p>
+            <strong>كتالوجكم فارغ</strong>
+            <p>أضيفوا قبعة لبدء ملء الكتالوج.</p>
           </div>
         ) : (
           <div className="product-cards-grid">
@@ -470,29 +470,29 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                 <div
                   className="product-admin-image"
                   role="img"
-                  aria-label={product.title}
+                  aria-label={getProductTitleAr(product.title)}
                   style={product.imageUrls[0] ? { backgroundImage: `url("${product.imageUrls[0].replaceAll('"', "%22")}")` } : undefined}
                 >
-                  {!product.imageUrls[0] && <span>Pas d’image</span>}
+                  {!product.imageUrls[0] && <span>لا توجد صورة</span>}
                 </div>
                 <div className="product-admin-body">
                   <div className="product-admin-title-row">
-                    <h3>{product.title}</h3>
+                    <h3>{getProductTitleAr(product.title)}</h3>
                     <span className={`product-status-badge${product.isActive ? " is-active" : ""}`}>
-                      {product.isActive ? "En ligne" : "Masqué"}
+                      {product.isActive ? "منشور" : "مخفي"}
                     </span>
                   </div>
-                  <p className="product-admin-description">{product.description}</p>
+                  <p className="product-admin-description">{getProductDescriptionAr(product.description)}</p>
                   <div className="product-admin-meta">
                     <span><strong>{formatPrice(product.discountedPrice)}</strong>{product.originalPrice > product.discountedPrice && <del>{formatPrice(product.originalPrice)}</del>}</span>
-                    <span>Stock : <strong>{product.stockQuantity}</strong></span>
+                    <span>المخزون: <strong>{product.stockQuantity}</strong></span>
                   </div>
                   <div className="product-admin-actions">
-                    <button type="button" onClick={() => editProduct(product)} disabled={isPending}>Modifier</button>
+                    <button type="button" onClick={() => editProduct(product)} disabled={isPending}>تعديل</button>
                     {!product.isActive && (
-                      <button type="button" onClick={() => handleActivate(product)} disabled={isPending}>Activer</button>
+                      <button type="button" onClick={() => handleActivate(product)} disabled={isPending}>تفعيل</button>
                     )}
-                    <button className="product-delete-button" type="button" onClick={() => handleDelete(product)} disabled={isPending}>Supprimer</button>
+                    <button className="product-delete-button" type="button" onClick={() => handleDelete(product)} disabled={isPending}>حذف</button>
                   </div>
                 </div>
               </article>

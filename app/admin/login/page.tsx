@@ -32,7 +32,7 @@ export default async function AdminLoginPage() {
 
   return (
     <main className="admin-login-page">
-      <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>Hk casquette shop</span></Link>
+      <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>متجر HK للقبعات</span></Link>
       <LoginForm />
     </main>
   );

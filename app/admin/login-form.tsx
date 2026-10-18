@@ -11,11 +11,11 @@ export default function LoginForm() {
 
   return (
     <form className="admin-login-card" action={formAction}>
-      <span className="admin-eyebrow">ESPACE PRIVÉ</span>
-      <h1>Bon retour.</h1>
-      <p>Connectez-vous pour gérer les casquettes et les commandes.</p>
+      <span className="admin-eyebrow">مساحة خاصة</span>
+      <h1>مرحباً بعودتكم.</h1>
+      <p>سجلوا الدخول لإدارة القبعات والطلبات.</p>
       <label className="admin-login-field">
-        <span>Mot de passe</span>
+        <span>كلمة المرور</span>
         <input
           autoComplete="current-password"
           name="password"
@@ -26,9 +26,9 @@ export default function LoginForm() {
       </label>
       {state.error && <p className="admin-login-error" role="alert">{state.error}</p>}
       <button className="admin-primary-button" type="submit" disabled={pending}>
-        {pending ? "Connexion…" : "Se connecter"}
+        {pending ? "جارٍ تسجيل الدخول…" : "تسجيل الدخول"}
       </button>
-      <Link className="admin-back-link" href="/">← Retour à la boutique</Link>
+      <Link className="admin-back-link" href="/">→ العودة إلى المتجر</Link>
     </form>
   );
 }

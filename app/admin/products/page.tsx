@@ -22,27 +22,27 @@ export default async function AdminProductsPage() {
   return (
     <main className="admin-page">
       <header className="admin-header">
-        <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>Hk casquette shop</span></Link>
-        <nav className="admin-header-links" aria-label="Navigation administration">
-          <Link href="/admin">Commandes & livraison</Link>
-          <Link href="/admin/products" aria-current="page">Produits</Link>
+        <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>متجر HK للقبعات</span></Link>
+        <nav className="admin-header-links" aria-label="التنقل في الإدارة">
+          <Link href="/admin">الطلبات والتوصيل</Link>
+          <Link href="/admin/products" aria-current="page">المنتجات</Link>
         </nav>
-        <Link className="admin-logout-button" href="/admin">Retour au tableau de bord</Link>
+        <Link className="admin-logout-button" href="/admin">العودة إلى لوحة التحكم</Link>
       </header>
       <section className="admin-content products-content">
         <div className="admin-page-heading">
           <div>
-            <span className="admin-eyebrow">CATALOGUE DE LA BOUTIQUE</span>
-            <h1>Produits<span>.</span></h1>
-            <p>Gérez les casquettes disponibles dans votre catalogue.</p>
+            <span className="admin-eyebrow">كتالوج المتجر</span>
+            <h1>المنتجات<span>.</span></h1>
+            <p>أديروا القبعات المتاحة في الكتالوج.</p>
           </div>
           {!productsError && (
-            <span className="admin-order-count">{products.length} produit{products.length === 1 ? "" : "s"}</span>
+            <span className="admin-order-count">{products.length} منتج</span>
           )}
         </div>
         {productsError ? (
           <p className="admin-data-error" role="alert">
-            Impossible de charger les produits. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
+            تعذر تحميل المنتجات. تحققوا من إعداد قاعدة البيانات ومخطط PostgreSQL.
           </p>
         ) : (
           <ProductsManager products={products} />

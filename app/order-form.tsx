@@ -5,6 +5,10 @@ import { submitOrder } from "./actions";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
+  getColorLabelAr,
+  getProductTitleAr,
+  getWilayaLabelAr,
+  ORDER_SIZE_LABELS_AR,
   SHIPPING_FEE,
   WILAYAS,
   type ProductDto,
@@ -15,7 +19,7 @@ import {
 const AVAILABLE_SIZES = ["Standard", "S", "M", "L"] as const;
 
 function formatPrice(amount: number) {
-  return `${new Intl.NumberFormat("fr-DZ").format(amount)} DA`;
+  return `${new Intl.NumberFormat("ar-DZ").format(amount)} دج`;
 }
 
 function normalizeWilayaCode(value: string): number | null {
@@ -154,7 +158,7 @@ export default function OrderForm({
       setSubmissionError(
         error instanceof Error
           ? error.message
-          : "Votre commande n’a pas pu être enregistrée. Vérifiez les informations et réessayez.",
+          : "تعذر تسجيل طلبكم. تحققوا من المعلومات وحاولوا مجدداً.",
       );
     } finally {
       setIsSubmitting(false);
@@ -166,19 +170,19 @@ export default function OrderForm({
       <form className="order-card" onSubmit={handleSubmit}>
         <div className="form-heading">
           <div>
-            <span className="form-step">VOTRE COMMANDE</span>
-            <h3>Commandez {product.title}.</h3>
+            <span className="form-step">طلبكم</span>
+            <h3>اطلبوا {getProductTitleAr(product.title)}.</h3>
           </div>
-          <span className="form-lock" aria-label="Formulaire sécurisé">✳</span>
+          <span className="form-lock" aria-label="نموذج آمن">✳</span>
         </div>
 
         <div className="order-item-list">
           {items.map((item, index) => (
             <fieldset className="order-item-option" key={item.key}>
-              <legend>Casquette {index + 1}</legend>
+              <legend>القبعة {index + 1}</legend>
               {product.variants.length > 0 ? (
                 <div className="order-option-group">
-                  <span>Couleur</span>
+                  <span>اللون</span>
                   <div className="order-color-options">
                     {availableColors.map((color) => (
                       <button
@@ -186,11 +190,11 @@ export default function OrderForm({
                         key={color.id}
                         type="button"
                         onClick={() => updateItem(item.key, { variantId: color.id, color: color.name })}
-                        aria-label={color.name}
+                        aria-label={getColorLabelAr(color.name)}
                         aria-pressed={item.variantId === color.id}
                       >
                         <span className="order-color-swatch" style={{ backgroundColor: color.hex }} />
-                        <span>{color.name}</span>
+                        <span>{getColorLabelAr(color.name)}</span>
                       </button>
                     ))}
                   </div>
@@ -198,11 +202,11 @@ export default function OrderForm({
               ) : (
                 <p className="order-item-default-color">
                   <span className="order-color-swatch" style={{ backgroundColor: availableColors[0].hex }} />
-                  {availableColors[0].name}
+                  {getColorLabelAr(availableColors[0].name)}
                 </p>
               )}
               <div className="order-option-group">
-                <span>Taille</span>
+                <span>المقاس</span>
                 <div className="order-size-options">
                   {AVAILABLE_SIZES.map((size) => (
                     <button
@@ -212,24 +216,24 @@ export default function OrderForm({
                       onClick={() => updateItem(item.key, { size })}
                       aria-pressed={item.size === size}
                     >
-                      {size}
+                      {ORDER_SIZE_LABELS_AR[size]}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="order-item-actions">
-                <div className="quantity-control" aria-label={`Quantité pour ${item.color} ${item.size}`}>
+                <div className="quantity-control" aria-label={`الكمية للون ${getColorLabelAr(item.color)} والمقاس ${ORDER_SIZE_LABELS_AR[item.size]}`}>
                   <button
                     type="button"
                     onClick={() => updateItem(item.key, { quantity: item.quantity - 1 })}
-                    aria-label="Diminuer la quantité"
+                    aria-label="تقليل الكمية"
                     disabled={item.quantity <= 1}
                   >−</button>
                   <output aria-live="polite">{item.quantity}</output>
                   <button
                     type="button"
                     onClick={() => updateItem(item.key, { quantity: item.quantity + 1 })}
-                    aria-label="Augmenter la quantité"
+                    aria-label="زيادة الكمية"
                     disabled={totalQuantity >= maxQuantity}
                   >+</button>
                 </div>
@@ -239,7 +243,7 @@ export default function OrderForm({
                     type="button"
                     onClick={() => setItems((current) => current.filter((line) => line.key !== item.key))}
                   >
-                    Retirer
+                    حذف
                   </button>
                 )}
               </div>
@@ -251,16 +255,16 @@ export default function OrderForm({
             onClick={addItem}
             disabled={items.length >= 10 || totalQuantity >= maxQuantity}
           >
-            + Ajouter un autre coloris / taille
+            + إضافة لون / مقاس آخر
           </button>
         </div>
 
         <label className="field">
-          <span>Nom et prénom</span>
-          <input name="name" type="text" placeholder="Ex. Amine Benali" autoComplete="name" required minLength={3} />
+          <span>الاسم الكامل</span>
+          <input name="name" type="text" placeholder="مثال: أمين بن علي" autoComplete="name" required minLength={3} />
         </label>
         <label className="field">
-          <span>Numéro de téléphone</span>
+          <span>رقم الهاتف</span>
           <div className="phone-input">
             <span aria-hidden="true">🇩🇿 +213</span>
             <input
@@ -270,23 +274,24 @@ export default function OrderForm({
               autoComplete="tel-national"
               inputMode="tel"
               pattern="(0[5-7][0-9]{8}|[5-7][0-9]{8})"
-              title="Entrez un numéro mobile algérien valide (ex. 0550123456)"
+              title="أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456)"
               required
+              dir="ltr"
             />
           </div>
         </label>
         <div className="field-pair">
           <label className="field">
-            <span>الولاية / Wilaya</span>
+            <span>الولاية</span>
             <select name="wilaya" value={selectedWilayaCode} onChange={handleWilayaChange} required>
-              <option value="" disabled>Choisir une wilaya / اختر الولاية</option>
+              <option value="" disabled>اختاروا الولاية</option>
               {WILAYAS.map((wilayaName, index) => (
-                <option value={String(index + 1)} key={wilayaName}>{String(index + 1).padStart(2, "0")} — {wilayaName}</option>
+                <option value={String(index + 1)} key={wilayaName}>{String(index + 1).padStart(2, "0")} — {getWilayaLabelAr(wilayaName)}</option>
               ))}
             </select>
           </label>
           <label className="field">
-            <span>البلدية / Commune</span>
+            <span>البلدية</span>
             <select
               name="commune"
               value={commune}
@@ -295,7 +300,7 @@ export default function OrderForm({
               disabled={!selectedWilayaCode || availableCommunes.length === 0}
             >
               <option value="" disabled>
-                {availableCommunes.length > 0 ? "Choisir une commune / اختر البلدية" : "Choisissez d’abord une wilaya / اختر الولاية أولا"}
+                {availableCommunes.length > 0 ? "اختاروا البلدية" : "اختاروا الولاية أولاً"}
               </option>
               {availableCommunes.map((communeName) => (
                 <option value={communeName} key={communeName}>{communeName}</option>
@@ -305,21 +310,21 @@ export default function OrderForm({
         </div>
 
         <label className="field">
-          <span>Mode de livraison</span>
+          <span>طريقة التوصيل</span>
           <select
             name="deliveryType"
             value={deliveryType}
             onChange={(event) => setDeliveryType(event.currentTarget.value === "DESK" ? "DESK" : "HOME")}
           >
-            <option value="HOME">À domicile</option>
-            <option value="DESK">Stop Desk / Bureau</option>
+            <option value="HOME">إلى المنزل</option>
+            <option value="DESK">إلى المكتب</option>
           </select>
         </label>
 
         <div className="price-breakdown" aria-live="polite">
           {items.map((item) => (
             <div className="order-line-summary" key={item.key}>
-              <span>{item.quantity}x {product.title} {item.color} ({item.size})</span>
+              <span>{item.quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(item.color)} · {ORDER_SIZE_LABELS_AR[item.size]}</span>
               <span>{formatPrice(product.discountedPrice * item.quantity)}</span>
             </div>
           ))}
@@ -327,7 +332,7 @@ export default function OrderForm({
             <span>Livraison · {DELIVERY_LABELS[deliveryType]}</span>
             <span>{formatPrice(shippingFee)}</span>
           </div>
-          <div className="price-total"><strong>Total à payer</strong><strong>{formatPrice(total)}</strong></div>
+          <div className="price-total"><strong>المبلغ الإجمالي</strong><strong>{formatPrice(total)}</strong></div>
         </div>
 
         {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
@@ -336,9 +341,9 @@ export default function OrderForm({
           type="submit"
           disabled={isSubmitting || !selectedShippingRate || product.stockQuantity < 1 || totalQuantity > product.stockQuantity}
         >
-          {product.stockQuantity < 1 ? "Rupture de stock" : isSubmitting ? "Enregistrement…" : "Commander"} <span aria-hidden="true">→</span>
+          {product.stockQuantity < 1 ? "نفدت الكمية" : isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب"} <span aria-hidden="true">←</span>
         </button>
-        <p className="form-note"><span aria-hidden="true">✓</span> Aucun paiement en ligne. Vous payez à la livraison.</p>
+        <p className="form-note"><span aria-hidden="true">✓</span> لا يوجد دفع إلكتروني. الدفع عند الاستلام.</p>
       </form>
 
       {order && (
@@ -350,25 +355,25 @@ export default function OrderForm({
             aria-labelledby="success-title"
             onClick={(event) => event.stopPropagation()}
           >
-            <button className="modal-close" type="button" onClick={() => setOrder(null)} aria-label="Fermer">×</button>
+            <button className="modal-close" type="button" onClick={() => setOrder(null)} aria-label="إغلاق">×</button>
             <div className="success-mark" aria-hidden="true">✓</div>
-            <span className="section-kicker">Merci pour votre confiance</span>
-            <h2 id="success-title">C’est bien noté, {order.name.split(" ")[0]} !</h2>
-            <p>Votre demande est enregistrée. Notre équipe vous appellera au <strong>{order.phone}</strong> pour confirmer la livraison.</p>
+            <span className="section-kicker">شكراً لثقتكم</span>
+            <h2 id="success-title">تم استلام طلبكم يا {order.name.split(" ")[0]}!</h2>
+            <p>تم تسجيل طلبكم. سيتصل بكم فريقنا على الرقم <strong>{order.phone}</strong> لتأكيد التوصيل.</p>
             <div className="summary-box">
               <div className="summary-items">
-                <span>Articles</span>
+                <span>المنتجات</span>
                 {order.items.map((item, index) => (
                   <strong key={`${item.color}-${item.size}-${index}`}>
-                    {item.quantity}x {product.title} {item.color} ({item.size})
+                    {item.quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(item.color)} · {ORDER_SIZE_LABELS_AR[item.size]}
                   </strong>
                 ))}
               </div>
-              <div><span>Livraison</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {order.commune}, {order.wilaya}</strong></div>
-              <div><span>Frais de livraison</span><strong>{formatPrice(order.shippingFee)}</strong></div>
-              <div><span>À régler à la livraison</span><strong>{formatPrice(order.totalPrice)}</strong></div>
+              <div><span>التوصيل</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {order.commune}, {getWilayaLabelAr(order.wilaya)}</strong></div>
+              <div><span>رسوم التوصيل</span><strong>{formatPrice(order.shippingFee)}</strong></div>
+              <div><span>المبلغ عند الاستلام</span><strong>{formatPrice(order.totalPrice)}</strong></div>
             </div>
-            <button className="submit-button" type="button" onClick={() => setOrder(null)}>Continuer ma visite</button>
+            <button className="submit-button" type="button" onClick={() => setOrder(null)}>مواصلة التسوق</button>
           </section>
         </div>
       )}

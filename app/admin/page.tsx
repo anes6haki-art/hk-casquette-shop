@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { getOrdersForAdmin, getShippingRatesForAdmin } from "@/lib/orders";
-import { DELIVERY_LABELS, ORDER_STATUSES, isOrderStatus, type DeliveryType } from "@/lib/store-data";
+import { DELIVERY_LABELS, getColorLabelAr, getProductTitleAr, getWilayaLabelAr, ORDER_STATUSES, isOrderStatus, type DeliveryType } from "@/lib/store-data";
 import AdminAuthFallback, {
   getAdminAuthFallbackMessage,
   getAdminErrorDetail,
@@ -14,15 +14,15 @@ import DhdDispatchButton from "./dhd-dispatch-button";
 export const instant = false;
 
 const statusLabels = {
-  PENDING: "Pending",
-  CONFIRMED: "Confirmed",
-  SHIPPED: "Shipped",
-  DELIVERED: "Delivered",
-  CANCELLED: "Cancelled",
+  PENDING: "قيد الانتظار",
+  CONFIRMED: "مؤكد",
+  SHIPPED: "تم الشحن",
+  DELIVERED: "تم التسليم",
+  CANCELLED: "ملغى",
 } as const;
 
 function formatPrice(amount: number) {
-  return `${new Intl.NumberFormat("fr-DZ").format(amount)} DA`;
+  return `${new Intl.NumberFormat("ar-DZ").format(amount)} دج`;
 }
 
 export default async function AdminDashboardPage() {
@@ -74,15 +74,15 @@ export default async function AdminDashboardPage() {
   return (
     <main className="admin-page">
       <header className="admin-header">
-        <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>Hk casquette shop</span></Link>
-        <nav className="admin-header-links" aria-label="Navigation administration">
-          <Link href="/admin" aria-current="page">Commandes & livraison</Link>
-          <Link href="/admin/products">Produits</Link>
+        <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>متجر HK للقبعات</span></Link>
+        <nav className="admin-header-links" aria-label="التنقل في الإدارة">
+          <Link href="/admin" aria-current="page">الطلبات والتوصيل</Link>
+          <Link href="/admin/products">المنتجات</Link>
         </nav>
         <div className="admin-header-right">
-          <span className="admin-access"><span /> Espace administrateur</span>
+          <span className="admin-access"><span /> مساحة الإدارة</span>
           <form action={logoutAdmin}>
-            <button className="admin-logout-button" type="submit">Déconnexion <span aria-hidden="true">↗</span></button>
+            <button className="admin-logout-button" type="submit">تسجيل الخروج <span aria-hidden="true">↗</span></button>
           </form>
         </div>
       </header>
@@ -90,55 +90,55 @@ export default async function AdminDashboardPage() {
       <section className="admin-content">
         <div className="admin-page-heading">
           <div>
-            <span className="admin-eyebrow">VOTRE BOUTIQUE, EN UN COUP D’ŒIL</span>
-            <h1>Commandes<span>.</span></h1>
-            <p>Suivez et gérez les commandes de vos clients.</p>
+            <span className="admin-eyebrow">متجركم بنظرة واحدة</span>
+            <h1>الطلبات<span>.</span></h1>
+            <p>تابعوا طلبات العملاء وأديروها.</p>
           </div>
           {!hasOrdersError && (
-            <span className="admin-order-count">{orders.length} commande{orders.length === 1 ? "" : "s"}</span>
+            <span className="admin-order-count">{orders.length} طلب</span>
           )}
         </div>
 
         {hasOrdersError && (
           <p className="admin-data-error" role="alert">
-            Impossible de charger les commandes. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
+            تعذر تحميل الطلبات. تحققوا من إعداد قاعدة البيانات ومخطط PostgreSQL.
             <br />
-            <strong>Détail de l’erreur :</strong> {ordersError}
+            <strong>تفاصيل الخطأ:</strong> {ordersError}
           </p>
         )}
         {!hasOrdersError && <div className="admin-stats">
-          <article><span>Total commandes</span><strong>{orders.length}</strong><small>Toutes périodes</small></article>
-          <article><span>En attente</span><strong>{pendingCount}</strong><small>À traiter</small></article>
-          <article><span>Confirmées</span><strong>{confirmedCount}</strong><small>En préparation</small></article>
-          <article><span>Livrées</span><strong>{deliveredCount}</strong><small>Commandes terminées</small></article>
+          <article><span>إجمالي الطلبات</span><strong>{orders.length}</strong><small>كل الفترات</small></article>
+          <article><span>قيد الانتظار</span><strong>{pendingCount}</strong><small>تحتاج إلى معالجة</small></article>
+          <article><span>مؤكدة</span><strong>{confirmedCount}</strong><small>قيد التحضير</small></article>
+          <article><span>تم تسليمها</span><strong>{deliveredCount}</strong><small>طلبات مكتملة</small></article>
         </div>}
 
         {!hasOrdersError && <section className="admin-table-card" aria-labelledby="orders-title">
           <div className="admin-table-heading">
-            <div><h2 id="orders-title">Toutes les commandes</h2><p>Les commandes les plus récentes apparaissent en premier.</p></div>
+            <div><h2 id="orders-title">جميع الطلبات</h2><p>تظهر أحدث الطلبات أولاً.</p></div>
           </div>
           {orders.length === 0 ? (
             <div className="admin-empty">
               <span aria-hidden="true">✳</span>
-              <strong>Pas encore de commandes</strong>
-              <p>Les nouvelles commandes de votre boutique apparaîtront ici.</p>
+              <strong>لا توجد طلبات بعد</strong>
+              <p>ستظهر طلبات المتجر الجديدة هنا.</p>
             </div>
           ) : (
             <div className="admin-table-scroll">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Client</th>
-                    <th>Produit</th>
-                    <th>Téléphone</th>
-                    <th>Livraison</th>
-                    <th>Mode de livraison</th>
-                    <th>Qté</th>
-                    <th>Total</th>
-                    <th>Date</th>
-                    <th>Statut</th>
-                    <th>Mettre à jour</th>
-                    <th>Livraison DHD</th>
+                    <th>العميل</th>
+                    <th>المنتج</th>
+                    <th>الهاتف</th>
+                    <th>التوصيل</th>
+                    <th>طريقة التوصيل</th>
+                    <th>الكمية</th>
+                    <th>الإجمالي</th>
+                    <th>التاريخ</th>
+                    <th>الحالة</th>
+                    <th>تحديث</th>
+                    <th>شحن DHD</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -148,19 +148,19 @@ export default async function AdminDashboardPage() {
                       <tr key={order.id}>
                         <td><strong>{order.name}</strong></td>
                         <td>
-                          <strong>{order.productTitle}</strong>
+                          <strong>{getProductTitleAr(order.productTitle)}</strong>
                           {order.items.length > 0 && (
                             <small className="admin-order-items">
-                              {order.items.map((item) => `${item.quantity}x ${item.title} ${item.color} (${item.size})`).join(" · ")}
+                              {order.items.map((item) => `${item.quantity} × ${getProductTitleAr(item.title)} ${getColorLabelAr(item.color)} (${item.size})`).join(" · ")}
                             </small>
                           )}
                         </td>
                         <td>{order.phone}</td>
-                        <td><strong>{order.wilaya}</strong><small>{order.commune}</small></td>
-                        <td>{DELIVERY_LABELS[order.deliveryType as DeliveryType] ?? "À domicile"}</td>
+                        <td><strong>{getWilayaLabelAr(order.wilaya)}</strong><small>{order.commune}</small></td>
+                        <td>{DELIVERY_LABELS[order.deliveryType as DeliveryType] ?? "التوصيل إلى المنزل"}</td>
                         <td>{order.quantity}</td>
                         <td className="admin-price">{formatPrice(order.totalPrice)}</td>
-                        <td className="admin-date">{new Intl.DateTimeFormat("fr-DZ", {
+                        <td className="admin-date">{new Intl.DateTimeFormat("ar-DZ", {
                           dateStyle: "medium",
                           timeStyle: "short",
                         }).format(order.createdAt)}</td>
@@ -168,10 +168,10 @@ export default async function AdminDashboardPage() {
                         <td>
                           <form className="admin-status-form" action={updateOrderStatus}>
                             <input type="hidden" name="orderId" value={order.id} />
-                            <select name="status" defaultValue={status} aria-label={`Statut de la commande de ${order.name}`}>
+                            <select name="status" defaultValue={status} aria-label={`حالة طلب ${order.name}`}>
                               {ORDER_STATUSES.map((option) => <option key={option} value={option}>{statusLabels[option]}</option>)}
                             </select>
-                            <button type="submit" aria-label={`Enregistrer le statut de ${order.name}`}>OK</button>
+                            <button type="submit" aria-label={`حفظ حالة ${order.name}`}>حفظ</button>
                           </form>
                         </td>
                         <td>
@@ -183,7 +183,7 @@ export default async function AdminDashboardPage() {
                           ) : status === "CONFIRMED" ? (
                             <DhdDispatchButton orderId={order.id} />
                           ) : (
-                            <span className="dhd-unavailable">Disponible après confirmation</span>
+                            <span className="dhd-unavailable">متاح بعد التأكيد</span>
                           )}
                         </td>
                       </tr>
@@ -197,55 +197,55 @@ export default async function AdminDashboardPage() {
 
         {hasShippingRatesError && (
           <p className="admin-data-error" role="alert">
-            Impossible de charger les tarifs de livraison. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
+            تعذر تحميل رسوم التوصيل. تحققوا من إعداد قاعدة البيانات ومخطط PostgreSQL.
             <br />
-            <strong>Détail de l’erreur :</strong> {shippingRatesError}
+            <strong>تفاصيل الخطأ:</strong> {shippingRatesError}
           </p>
         )}
         {!hasShippingRatesError && <section className="admin-table-card shipping-settings-card" aria-labelledby="shipping-settings-title">
           <div className="admin-table-heading">
             <div>
-              <h2 id="shipping-settings-title">Tarifs de livraison par wilaya</h2>
-              <p>Modifiez les tarifs à domicile et Stop Desk. Les commandes utilisent le tarif sauvegardé.</p>
+              <h2 id="shipping-settings-title">رسوم التوصيل حسب الولاية</h2>
+              <p>عدّلوا رسوم التوصيل إلى المنزل أو المكتب. تُحسب الطلبات وفق الأسعار المحفوظة.</p>
             </div>
           </div>
           <div className="admin-table-scroll">
             <table className="admin-table shipping-rates-table">
               <thead>
                 <tr>
-                  <th>Wilaya</th>
-                  <th>Livraison à domicile (DA)</th>
-                  <th>Stop Desk / Bureau (DA)</th>
-                  <th>Action</th>
+                  <th>الولاية</th>
+                  <th>التوصيل إلى المنزل (دج)</th>
+                  <th>التوصيل إلى المكتب (دج)</th>
+                  <th>إجراء</th>
                 </tr>
               </thead>
               <tbody>
                 {shippingRates.map((rate) => (
                   <tr key={rate.wilaya}>
-                    <td><strong>{rate.wilaya}</strong></td>
+                    <td><strong>{getWilayaLabelAr(rate.wilaya)}</strong></td>
                       <td>
                         <form id={`shipping-${rate.wilaya}`} action={updateShippingRate}>
                         <input type="hidden" name="wilaya" value={rate.wilaya} />
                         </form>
                         <label>
-                          <span className="sr-only">Livraison à domicile pour {rate.wilaya}</span>
+                          <span className="sr-only">التوصيل إلى المنزل في {getWilayaLabelAr(rate.wilaya)}</span>
                           <input form={`shipping-${rate.wilaya}`} className="shipping-rate-input" name="homePrice" type="number" min="0" max="100000" step="1" defaultValue={rate.homePrice} required />
                         </label>
                       </td>
                       <td>
                         <label>
-                          <span className="sr-only">Stop Desk pour {rate.wilaya}</span>
+                          <span className="sr-only">التوصيل إلى المكتب في {getWilayaLabelAr(rate.wilaya)}</span>
                           <input form={`shipping-${rate.wilaya}`} className="shipping-rate-input" name="deskPrice" type="number" min="0" max="100000" step="1" defaultValue={rate.deskPrice} required />
                         </label>
                       </td>
-                      <td><button className="shipping-save-button" type="submit" form={`shipping-${rate.wilaya}`}>Enregistrer</button></td>
+                      <td><button className="shipping-save-button" type="submit" form={`shipping-${rate.wilaya}`}>حفظ</button></td>
                     </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </section>}
-        <p className="admin-footer-note"><span aria-hidden="true">◉</span> Les données clients sont accessibles uniquement aux comptes administrateurs.</p>
+        <p className="admin-footer-note"><span aria-hidden="true">◉</span> بيانات العملاء متاحة للمسؤولين فقط.</p>
       </section>
     </main>
   );

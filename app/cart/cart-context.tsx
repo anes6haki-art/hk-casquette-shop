@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { getColorLabelAr, getProductTitleAr, ORDER_SIZE_LABELS_AR, ORDER_SIZES } from "@/lib/store-data";
 
 const STORAGE_KEY = "hk-casquette-cart-v1";
 
@@ -16,6 +17,13 @@ export type CartItem = {
   selectedSize: string;
   quantity: number;
   image: string;
+  variants?: CartVariantOption[];
+};
+
+export type CartVariantOption = {
+  variantId: string;
+  color: string;
+  image: string;
 };
 
 type CartItemInput = Omit<CartItem, "id">;
@@ -25,6 +33,8 @@ type CartContextValue = {
   setIsOpen: (open: boolean) => void;
   addItem: (item: CartItemInput) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  updateVariant: (id: string, variantId: string) => void;
+  updateSize: (id: string, size: string) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   itemCount: number;
@@ -48,11 +58,19 @@ function isCartItem(value: unknown): value is CartItem {
     Number.isSafeInteger(item.price) &&
     item.price >= 0 &&
     typeof item.image === "string" &&
+    (item.variants === undefined ||
+      (Array.isArray(item.variants) && item.variants.every((variant) =>
+        typeof variant === "object" &&
+        variant !== null &&
+        typeof variant.variantId === "string" &&
+        typeof variant.color === "string" &&
+        typeof variant.image === "string",
+      ))) &&
     (item.variantId === undefined || typeof item.variantId === "string");
 }
 
 function formatPrice(amount: number) {
-  return `${new Intl.NumberFormat("fr-DZ").format(amount)} DA`;
+  return `${new Intl.NumberFormat("ar-DZ").format(amount)} دج`;
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -125,6 +143,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const updateVariant = useCallback((id: string, variantId: string) => {
+    setItems((current) => current.map((item) => {
+      if (item.id !== id) return item;
+      const variant = item.variants?.find((option) => option.variantId === variantId);
+      if (!variant) return item;
+      return {
+        ...item,
+        variantId: variant.variantId,
+        selectedColor: variant.color,
+        image: variant.image || item.image,
+      };
+    }));
+  }, []);
+
+  const updateSize = useCallback((id: string, selectedSize: string) => {
+    if (!ORDER_SIZES.includes(selectedSize as (typeof ORDER_SIZES)[number])) return;
+    setItems((current) => current.map((item) =>
+      item.id === id ? { ...item, selectedSize } : item,
+    ));
+  }, []);
+
   const removeItem = useCallback((id: string) => {
     setItems((current) => current.filter((item) => item.id !== id));
   }, []);
@@ -138,11 +177,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsOpen,
     addItem,
     updateQuantity,
+    updateVariant,
+    updateSize,
     removeItem,
     clearCart,
     itemCount,
     subtotal,
-  }), [items, isOpen, addItem, updateQuantity, removeItem, clearCart, itemCount, subtotal]);
+  }), [items, isOpen, addItem, updateQuantity, updateVariant, updateSize, removeItem, clearCart, itemCount, subtotal]);
 
   return (
     <CartContext.Provider value={value}>
@@ -165,41 +206,41 @@ export function CartButton() {
       className="store-cart-button"
       type="button"
       onClick={() => setIsOpen(true)}
-      aria-label={`Ouvrir le panier, ${itemCount} article${itemCount === 1 ? "" : "s"}`}
+      aria-label={`فتح السلة، ${itemCount} منتج`}
     >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.6L21 8H6" />
         <circle cx="10" cy="20" r="1" />
         <circle cx="18" cy="20" r="1" />
       </svg>
-      <span>Panier</span>
+      <span>السلة</span>
       <span className="store-cart-count" aria-live="polite">{itemCount}</span>
     </button>
   );
 }
 
 function CartDrawer() {
-  const { items, isOpen, setIsOpen, updateQuantity, removeItem, subtotal, itemCount } = useCart();
+  const { items, isOpen, setIsOpen, updateQuantity, updateVariant, updateSize, removeItem, subtotal, itemCount } = useCart();
   if (!isOpen) return null;
 
   return (
     <div className="cart-drawer-layer">
-      <button className="cart-drawer-backdrop" type="button" aria-label="Fermer le panier" onClick={() => setIsOpen(false)} />
+      <button className="cart-drawer-backdrop" type="button" aria-label="إغلاق السلة" onClick={() => setIsOpen(false)} />
       <aside className="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
         <header className="cart-drawer-header">
           <div>
-            <span className="shop-eyebrow">VOTRE SÉLECTION</span>
-            <h2 id="cart-drawer-title">Panier <span>({itemCount})</span></h2>
+            <span className="shop-eyebrow">اختياراتكم</span>
+            <h2 id="cart-drawer-title">السلة <span>({itemCount})</span></h2>
           </div>
-          <button className="cart-drawer-close" type="button" onClick={() => setIsOpen(false)} aria-label="Fermer le panier">×</button>
+          <button className="cart-drawer-close" type="button" onClick={() => setIsOpen(false)} aria-label="إغلاق السلة">×</button>
         </header>
 
         {items.length === 0 ? (
           <div className="cart-drawer-empty">
             <span aria-hidden="true">◇</span>
-            <strong>Votre panier est vide</strong>
-            <p>Ajoutez une casquette pour commencer votre sélection.</p>
-            <button type="button" onClick={() => setIsOpen(false)}>Continuer la visite</button>
+            <strong>سلتكم فارغة</strong>
+            <p>أضيفوا قبعة لبدء التسوق.</p>
+            <button type="button" onClick={() => setIsOpen(false)}>مواصلة التسوق</button>
           </div>
         ) : (
           <>
@@ -210,28 +251,43 @@ function CartDrawer() {
                     ? <Image src={item.image} alt="" width={78} height={78} unoptimized />
                     : <span className="cart-item-image-fallback" aria-hidden="true">HK</span>}
                   <div className="cart-drawer-item-copy">
-                    <strong>{item.title}</strong>
-                    <span>{item.selectedColor} · {item.selectedSize}</span>
+                    <strong>{getProductTitleAr(item.title)}</strong>
+                    <div className="cart-item-options">
+                      {item.variants && item.variants.length > 0 ? (
+                        <label>
+                          <span className="sr-only">اللون</span>
+                          <select value={item.variantId ?? ""} onChange={(event) => updateVariant(item.id, event.currentTarget.value)}>
+                            {item.variants.map((variant) => <option key={variant.variantId} value={variant.variantId}>{getColorLabelAr(variant.color)}</option>)}
+                          </select>
+                        </label>
+                      ) : <span>{item.selectedColor}</span>}
+                      <label>
+                        <span className="sr-only">المقاس</span>
+                        <select value={item.selectedSize} onChange={(event) => updateSize(item.id, event.currentTarget.value)}>
+                          {ORDER_SIZES.map((size) => <option key={size} value={size}>{ORDER_SIZE_LABELS_AR[size]}</option>)}
+                        </select>
+                      </label>
+                    </div>
                     <b>{formatPrice(item.price * item.quantity)}</b>
                     <div className="cart-drawer-item-actions">
                       <div className="cart-quantity-control">
-                        <button type="button" aria-label="Diminuer" disabled={item.quantity <= 1} onClick={() => updateQuantity(item.id, item.quantity - 1)}>−</button>
+                        <button type="button" aria-label="تقليل الكمية" disabled={item.quantity <= 1} onClick={() => updateQuantity(item.id, item.quantity - 1)}>−</button>
                         <span>{item.quantity}</span>
-                        <button type="button" aria-label="Augmenter" disabled={itemCount >= 10} onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                        <button type="button" aria-label="زيادة الكمية" disabled={itemCount >= 10} onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                       </div>
-                      <button className="cart-remove-button" type="button" onClick={() => removeItem(item.id)}>Supprimer</button>
+                      <button className="cart-remove-button" type="button" onClick={() => removeItem(item.id)}>حذف</button>
                     </div>
                   </div>
                 </article>
               ))}
             </div>
             <footer className="cart-drawer-footer">
-              <div><span>Sous-total</span><strong>{formatPrice(subtotal)}</strong></div>
-              <small>Les frais de livraison seront calculés à l’étape suivante.</small>
+              <div><span>المجموع الفرعي</span><strong>{formatPrice(subtotal)}</strong></div>
+              <small>سيتم احتساب رسوم التوصيل عند تأكيد الطلب.</small>
               <Link className="cart-checkout-button" href="/checkout" onClick={() => setIsOpen(false)}>
-                Passer la commande <span aria-hidden="true">→</span>
+                إتمام الطلب <span aria-hidden="true">←</span>
               </Link>
-              <button className="cart-continue-button" type="button" onClick={() => setIsOpen(false)}>Continuer mes achats</button>
+              <button className="cart-continue-button" type="button" onClick={() => setIsOpen(false)}>مواصلة التسوق</button>
             </footer>
           </>
         )}

@@ -26,7 +26,7 @@ export async function createOrder(input: NewOrder) {
     input.items.length < 1 ||
     input.items.length > 20
   ) {
-    throw new Error("Invalid order details.");
+    throw new Error("بيانات الطلب غير صالحة.");
   }
 
   const name = input.name.trim();
@@ -39,19 +39,19 @@ export async function createOrder(input: NewOrder) {
   const commune = input.commune.trim();
 
   if (name.length < 3 || name.length > 120) {
-    throw new Error("Please enter a valid full name.");
+    throw new Error("يرجى إدخال الاسم الكامل بشكل صحيح.");
   }
   if (!/^[5-7]\d{8}$/.test(phone)) {
-    throw new Error("Please enter a valid Algerian mobile number.");
+    throw new Error("يرجى إدخال رقم هاتف جزائري صالح.");
   }
   if (!(WILAYAS as readonly string[]).includes(input.wilaya)) {
-    throw new Error("Please select a valid wilaya.");
+    throw new Error("يرجى اختيار ولاية صالحة.");
   }
   if (!isDeliveryType(input.deliveryType)) {
-    throw new Error("Please choose a valid delivery type.");
+    throw new Error("يرجى اختيار طريقة توصيل صالحة.");
   }
   if (!isCommuneForWilaya(input.wilaya, commune)) {
-    throw new Error("Please select a valid commune for this wilaya.");
+    throw new Error("يرجى اختيار بلدية تابعة لهذه الولاية.");
   }
   let totalQuantity = 0;
   const requestedItems = input.items.map((item) => {
@@ -63,38 +63,38 @@ export async function createOrder(input: NewOrder) {
       typeof item.quantity !== "number" ||
       (item.variantId !== undefined && typeof item.variantId !== "string")
     ) {
-      throw new Error("Un article de la commande est invalide.");
+      throw new Error("أحد عناصر الطلب غير صالح.");
     }
     if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10) {
-      throw new Error("La quantité demandée n’est pas valide.");
+      throw new Error("الكمية المطلوبة غير صالحة.");
     }
     if (!["Standard", "S", "M", "L"].includes(item.size)) {
-      throw new Error("Veuillez sélectionner une taille valide.");
+      throw new Error("يرجى اختيار مقاس صالح.");
     }
     totalQuantity += item.quantity;
     return item;
   });
   if (totalQuantity > 10) {
-    throw new Error("Le total de la commande ne peut pas dépasser 10 casquettes.");
+    throw new Error("لا يمكن أن يتجاوز إجمالي الطلب 10 قبعات.");
   }
 
   const uniqueProductIds = [...new Set(requestedItems.map((item) => item.productId))];
   const products = await Promise.all(uniqueProductIds.map((productId) => getStorefrontProduct(productId)));
   const productById = new Map(products.filter((product) => product !== null).map((product) => [product.id, product]));
   if (productById.size !== uniqueProductIds.length) {
-    throw new Error("Un produit de votre panier n’est plus disponible.");
+    throw new Error("أحد المنتجات في السلة لم يعد متاحاً.");
   }
 
   const quantityByProduct = new Map<string, number>();
   const orderItems = requestedItems.map((item) => {
     const product = productById.get(item.productId);
-    if (!product) throw new Error("Un produit de votre panier n’est plus disponible.");
+    if (!product) throw new Error("أحد المنتجات في السلة لم يعد متاحاً.");
 
     quantityByProduct.set(item.productId, (quantityByProduct.get(item.productId) ?? 0) + item.quantity);
 
     if (product.variants.length === 0) {
       if (item.variantId || item.color !== "Standard") {
-        throw new Error("La couleur sélectionnée n’est plus disponible.");
+        throw new Error("اللون المحدد لم يعد متاحاً.");
       }
       return {
         productId: product.id,
@@ -108,7 +108,7 @@ export async function createOrder(input: NewOrder) {
 
     const variant = product.variants.find((candidate) => candidate.id === item.variantId);
     if (!variant || item.color !== variant.colorName) {
-      throw new Error("La couleur sélectionnée n’est plus disponible.");
+      throw new Error("اللون المحدد لم يعد متاحاً.");
     }
     return {
       productId: product.id,
@@ -122,7 +122,7 @@ export async function createOrder(input: NewOrder) {
   for (const [productId, quantity] of quantityByProduct) {
     const product = productById.get(productId);
     if (!product || quantity > product.stockQuantity) {
-      throw new Error("La quantité demandée n’est pas disponible en stock.");
+      throw new Error("الكمية المطلوبة غير متوفرة في المخزون.");
     }
   }
   const subtotal = orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
@@ -135,7 +135,7 @@ export async function createOrder(input: NewOrder) {
     select: { homePrice: true, deskPrice: true },
   });
   if (!shippingRate) {
-    throw new Error("Shipping prices are not configured for this wilaya.");
+    throw new Error("رسوم التوصيل غير مضبوطة لهذه الولاية.");
   }
   const shippingFee = input.deliveryType === "HOME"
     ? shippingRate.homePrice
@@ -152,7 +152,7 @@ export async function createOrder(input: NewOrder) {
         data: { stockQuantity: { decrement: quantity } },
       });
       if (stockUpdate.count !== 1) {
-        throw new Error("Le stock vient de changer. Actualisez la page avant de commander.");
+        throw new Error("تغير المخزون للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
       }
     }
 
@@ -177,7 +177,7 @@ export async function createOrder(input: NewOrder) {
 
 export async function getOrdersForAdmin() {
   if (!(await hasAdminSession())) {
-    throw new Error("Unauthorized order access.");
+    throw new Error("غير مصرح بالوصول إلى الطلبات.");
   }
 
   return prisma.order.findMany({
@@ -231,7 +231,7 @@ export async function getShippingRatesForCheckout(): Promise<ShippingRateDto[]> 
 
 export async function getShippingRatesForAdmin(): Promise<ShippingRateDto[]> {
   if (!(await hasAdminSession())) {
-    throw new Error("Unauthorized shipping price access.");
+    throw new Error("غير مصرح بالوصول إلى أسعار التوصيل.");
   }
   await ensureShippingRates();
   return prisma.shippingRate.findMany({
@@ -246,14 +246,14 @@ export async function updateShippingRate(
   deskPrice: number,
 ) {
   if (!(await hasAdminSession())) {
-    throw new Error("Unauthorized shipping price update.");
+    throw new Error("غير مصرح بتعديل أسعار التوصيل.");
   }
   if (!(WILAYAS as readonly string[]).includes(wilaya)) {
-    throw new Error("Invalid wilaya.");
+    throw new Error("الولاية غير صالحة.");
   }
   for (const price of [homePrice, deskPrice]) {
     if (!Number.isSafeInteger(price) || price < 0 || price > 100_000) {
-      throw new Error("Shipping prices must be between 0 and 100,000 DA.");
+      throw new Error("يجب أن تتراوح رسوم التوصيل بين 0 و100,000 دج.");
     }
   }
 
@@ -266,13 +266,13 @@ export async function updateShippingRate(
 
 export async function updateOrderStatus(orderId: string, status: string) {
   if (!(await hasAdminSession())) {
-    throw new Error("Unauthorized order update.");
+    throw new Error("غير مصرح بتعديل الطلب.");
   }
   if (!orderId || orderId.length > 100) {
-    throw new Error("Invalid order ID.");
+    throw new Error("معرّف الطلب غير صالح.");
   }
   if (!isOrderStatus(status)) {
-    throw new Error("Invalid order status.");
+    throw new Error("حالة الطلب غير صالحة.");
   }
 
   const existingOrder = await prisma.order.findUnique({
@@ -280,7 +280,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
     select: { id: true },
   });
   if (!existingOrder) {
-    throw new Error("Order not found.");
+    throw new Error("لم يتم العثور على الطلب.");
   }
 
   return prisma.order.update({

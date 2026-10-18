@@ -10,15 +10,14 @@ export default function AdminError({
   return (
     <main className="admin-login-page">
       <section className="admin-login-card" role="alert">
-        <span className="admin-eyebrow">ERREUR SERVEUR</span>
-        <h1>La page d’administration est indisponible.</h1>
+        <span className="admin-eyebrow">خطأ في الخادم</span>
+        <h1>صفحة الإدارة غير متاحة.</h1>
         <p>
-          Consultez les journaux d’exécution Vercel pour trouver la cause. Cet
-          identifiant permet de rapprocher l’erreur des journaux :
+          راجعوا سجلات Vercel لمعرفة السبب. يساعد هذا المعرّف في العثور على الخطأ في السجلات:
         </p>
-        <p>{error.digest ?? "Identifiant indisponible"}</p>
+        <p>{error.digest ?? "المعرّف غير متاح"}</p>
         <button className="admin-primary-button" onClick={() => reset()}>
-          Réessayer
+          إعادة المحاولة
         </button>
       </section>
     </main>

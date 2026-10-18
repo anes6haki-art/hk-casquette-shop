@@ -28,7 +28,7 @@ export default function DhdDispatchButton({ orderId }: DhdDispatchButtonProps) {
           "error" in result &&
           typeof result.error === "string"
             ? result.error
-            : "La création de l’envoi a échoué.";
+            : "تعذر إنشاء الشحنة.";
         throw new Error(message);
       }
 
@@ -37,7 +37,7 @@ export default function DhdDispatchButton({ orderId }: DhdDispatchButtonProps) {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Une erreur inattendue est survenue.",
+          : "حدث خطأ غير متوقع.",
       );
     } finally {
       setPending(false);
@@ -47,7 +47,7 @@ export default function DhdDispatchButton({ orderId }: DhdDispatchButtonProps) {
   return (
     <div className="dhd-dispatch">
       <button type="button" onClick={sendToDhd} disabled={pending}>
-        {pending ? "Envoi…" : "Envoyer vers DHD"}
+        {pending ? "جارٍ الإرسال…" : "إرسال إلى DHD"}
       </button>
       {error && <small role="alert">{error}</small>}
     </div>

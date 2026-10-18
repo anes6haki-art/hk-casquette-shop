@@ -3,17 +3,17 @@ import Link from "next/link";
 export function getAdminAuthFallbackMessage(error: unknown) {
   if (error instanceof Error) {
     if (error.message === "Set ADMIN_PASSWORD.") {
-      return "La variable ADMIN_PASSWORD n’est pas configurée sur Vercel.";
+      return "متغير ADMIN_PASSWORD غير مضبوط على Vercel.";
     }
     if (error.message === "Production ADMIN_PASSWORD must contain at least 12 characters.") {
-      return "ADMIN_PASSWORD doit contenir au moins 12 caractères en production.";
+      return "يجب أن تتكون ADMIN_PASSWORD من 12 حرفاً على الأقل في بيئة الإنتاج.";
     }
     if (error.message === "ADMIN_SESSION_SECRET must contain at least 32 characters.") {
-      return "ADMIN_SESSION_SECRET doit contenir au moins 32 caractères.";
+      return "يجب أن يتكون ADMIN_SESSION_SECRET من 32 حرفاً على الأقل.";
     }
   }
 
-  return "Impossible de vérifier la session administrateur. Consultez le détail de l’erreur ci-dessous.";
+  return "تعذر التحقق من جلسة المسؤول. راجعوا تفاصيل الخطأ أدناه.";
 }
 
 export function getAdminErrorDetail(error: unknown) {
@@ -23,7 +23,7 @@ export function getAdminErrorDetail(error: unknown) {
   if (typeof error === "string") {
     return error;
   }
-  return "Une erreur inconnue est survenue.";
+  return "حدث خطأ غير معروف.";
 }
 
 export default function AdminAuthFallback({
@@ -36,12 +36,12 @@ export default function AdminAuthFallback({
   return (
     <main className="admin-login-page">
       <section className="admin-login-card" role="alert">
-        <span className="admin-eyebrow">CONFIGURATION ADMIN</span>
-        <h1>Administration indisponible.</h1>
+        <span className="admin-eyebrow">إعدادات الإدارة</span>
+        <h1>الإدارة غير متاحة.</h1>
         <p>{message}</p>
-        <p>Détail de l’erreur :</p>
+        <p>تفاصيل الخطأ:</p>
         <pre className="admin-error-detail">{errorDetail}</pre>
-        <Link className="admin-back-link" href="/">Retour à la boutique</Link>
+        <Link className="admin-back-link" href="/">العودة إلى المتجر</Link>
       </section>
     </main>
   );

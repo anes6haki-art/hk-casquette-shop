@@ -3,14 +3,14 @@ import { CartProvider } from "./cart/cart-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hk casquette shop — Casquettes en Algérie",
+  title: "Hk casquette shop — قبعات في الجزائر",
   description:
-    "Découvrez la collection Hk casquette shop. Commandez vos casquettes avec livraison dans les 58 wilayas et paiement à la réception.",
+    "اكتشفوا مجموعة Hk casquette shop. اطلبوا قبعاتكم مع التوصيل إلى الولايات الـ58 والدفع عند الاستلام.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="fr" className="h-full antialiased">
+    <html lang="ar" dir="rtl" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <CartProvider>{children}</CartProvider>
       </body>
