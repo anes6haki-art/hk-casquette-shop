@@ -179,7 +179,7 @@ export function CartButton() {
 }
 
 function CartDrawer() {
-  const { items, isOpen, setIsOpen, updateQuantity, removeItem, subtotal } = useCart();
+  const { items, isOpen, setIsOpen, updateQuantity, removeItem, subtotal, itemCount } = useCart();
   if (!isOpen) return null;
 
   return (
@@ -189,7 +189,7 @@ function CartDrawer() {
         <header className="cart-drawer-header">
           <div>
             <span className="shop-eyebrow">VOTRE SÉLECTION</span>
-            <h2 id="cart-drawer-title">Panier <span>({items.length})</span></h2>
+            <h2 id="cart-drawer-title">Panier <span>({itemCount})</span></h2>
           </div>
           <button className="cart-drawer-close" type="button" onClick={() => setIsOpen(false)} aria-label="Fermer le panier">×</button>
         </header>
@@ -217,7 +217,7 @@ function CartDrawer() {
                       <div className="cart-quantity-control">
                         <button type="button" aria-label="Diminuer" disabled={item.quantity <= 1} onClick={() => updateQuantity(item.id, item.quantity - 1)}>−</button>
                         <span>{item.quantity}</span>
-                        <button type="button" aria-label="Augmenter" onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                        <button type="button" aria-label="Augmenter" disabled={itemCount >= 10} onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                       </div>
                       <button className="cart-remove-button" type="button" onClick={() => removeItem(item.id)}>Supprimer</button>
                     </div>

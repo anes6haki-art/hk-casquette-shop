@@ -16,7 +16,7 @@ export default function CartCheckoutForm({
 }: {
   shippingRates: { wilaya: string; homePrice: number; deskPrice: number }[];
 }) {
-  const { items, subtotal, clearCart } = useCart();
+  const { items, subtotal, clearCart, updateQuantity, removeItem, itemCount } = useCart();
   const [wilayaCode, setWilayaCode] = useState("");
   const [commune, setCommune] = useState("");
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("HOME");
@@ -94,7 +94,7 @@ export default function CartCheckoutForm({
   }
 
   return (
-    <div className="checkout-layout">
+    <form className="checkout-layout" onSubmit={handleSubmit}>
       <section className="checkout-cart-summary" aria-labelledby="checkout-summary-title">
         <h2 id="checkout-summary-title">Votre sélection</h2>
         {items.map((item) => (
@@ -106,6 +106,34 @@ export default function CartCheckoutForm({
               <strong>{item.title}</strong>
               <span>{item.selectedColor} · {item.selectedSize} · Qté {item.quantity}</span>
               <b>{formatPrice(item.price * item.quantity)}</b>
+              <div className="cart-drawer-item-actions">
+                <div className="cart-quantity-control">
+                  <button
+                    type="button"
+                    aria-label={`Diminuer la quantité de ${item.title}`}
+                    disabled={item.quantity <= 1}
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                  >
+                    −
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    type="button"
+                    aria-label={`Augmenter la quantité de ${item.title}`}
+                    disabled={itemCount >= 10}
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  className="cart-remove-button"
+                  type="button"
+                  onClick={() => removeItem(item.id)}
+                >
+                  Supprimer
+                </button>
+              </div>
             </div>
           </article>
         ))}
@@ -114,9 +142,9 @@ export default function CartCheckoutForm({
         <div className="checkout-total-line checkout-total-final"><span>Total à payer</span><strong>{formatPrice(subtotal + shippingFee)}</strong></div>
       </section>
 
-      <form className="checkout-details-form" onSubmit={handleSubmit}>
+      <section className="checkout-details-form" aria-labelledby="checkout-delivery-title">
         <span className="shop-eyebrow"><span /> PAIEMENT À LA LIVRAISON</span>
-        <h2>Où livrer votre commande ?</h2>
+        <h2 id="checkout-delivery-title">Où livrer votre commande ?</h2>
         <label className="field">
           <span>Nom et prénom</span>
           <input name="name" type="text" placeholder="Ex. Amine Benali" autoComplete="name" required minLength={3} />
@@ -158,7 +186,7 @@ export default function CartCheckoutForm({
           {isSubmitting ? "Enregistrement…" : "Confirmer la commande"} <span aria-hidden="true">→</span>
         </button>
         <p className="form-note"><span aria-hidden="true">✓</span> Aucun paiement en ligne. Vous payez à la livraison.</p>
-      </form>
-    </div>
+      </section>
+    </form>
   );
 }

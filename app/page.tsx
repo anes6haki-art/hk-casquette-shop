@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { getStorefrontProducts } from "@/lib/products";
 import { CartButton } from "./cart/cart-context";
+import ProductCardCartButton from "./cart/product-card-cart-button";
 
 export const instant = false;
 
@@ -99,9 +100,12 @@ export default async function Home() {
                   <div className="cap-card-title-row"><h3>{product.title}</h3><span>{product.stockQuantity > 0 ? "En stock" : "Épuisé"}</span></div>
                   <div className="cap-card-bottom">
                     <div className="cap-card-price"><strong>{formatPrice(product.discountedPrice)}</strong>{product.originalPrice > product.discountedPrice && <del>{formatPrice(product.originalPrice)}</del>}</div>
-                    <Link className="cap-buy-button" href={`/products/${product.id}`} aria-disabled={product.stockQuantity < 1}>
-                      أطلب الآن <span>→</span>
-                    </Link>
+                    <div className="cap-card-buy-actions">
+                      <Link className="cap-buy-button" href={`/products/${product.id}`} aria-disabled={product.stockQuantity < 1}>
+                        أطلب الآن <span>→</span>
+                      </Link>
+                      <ProductCardCartButton product={product} />
+                    </div>
                   </div>
                 </div>
               </article>
