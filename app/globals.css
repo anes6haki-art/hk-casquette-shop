@@ -1250,6 +1250,13 @@ a {
   font-size: 13px;
 }
 
+.admin-error-detail {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: #8c3029;
+  font: inherit;
+}
+
 .admin-primary-button {
   width: 100%;
   min-height: 47px;

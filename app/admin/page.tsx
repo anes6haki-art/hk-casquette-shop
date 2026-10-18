@@ -4,6 +4,10 @@ import { connection } from "next/server";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { getOrdersForAdmin, getShippingRatesForAdmin } from "@/lib/orders";
 import { DELIVERY_LABELS, ORDER_STATUSES, isOrderStatus, type DeliveryType } from "@/lib/store-data";
+import AdminAuthFallback, {
+  getAdminAuthFallbackMessage,
+  getAdminErrorDetail,
+} from "./admin-auth-fallback";
 import { logoutAdmin, updateOrderStatus, updateShippingRate } from "./actions";
 import DhdDispatchButton from "./dhd-dispatch-button";
 
@@ -24,7 +28,20 @@ function formatPrice(amount: number) {
 export default async function AdminDashboardPage() {
   await connection();
 
-  if (!(await hasAdminSession())) {
+  let isAuthenticated: boolean;
+  try {
+    isAuthenticated = await hasAdminSession();
+  } catch (error: unknown) {
+    console.error("Failed to validate admin session for dashboard.", error);
+    return (
+      <AdminAuthFallback
+        message={getAdminAuthFallbackMessage(error)}
+        errorDetail={getAdminErrorDetail(error)}
+      />
+    );
+  }
+
+  if (!isAuthenticated) {
     redirect("/admin/login");
   }
 
@@ -34,7 +51,7 @@ export default async function AdminDashboardPage() {
         return { data: await getOrdersForAdmin(), error: false };
       } catch (error: unknown) {
         console.error("Failed to load admin orders.", error);
-        return { data: [], error: true };
+        return { data: [], error: getAdminErrorDetail(error) };
       }
     })(),
     (async () => {
@@ -42,12 +59,14 @@ export default async function AdminDashboardPage() {
         return { data: await getShippingRatesForAdmin(), error: false };
       } catch (error: unknown) {
         console.error("Failed to load admin shipping rates.", error);
-        return { data: [], error: true };
+        return { data: [], error: getAdminErrorDetail(error) };
       }
     })(),
   ]);
   const { data: orders, error: ordersError } = ordersResult;
   const { data: shippingRates, error: shippingRatesError } = shippingRatesResult;
+  const hasOrdersError = typeof ordersError === "string";
+  const hasShippingRatesError = typeof shippingRatesError === "string";
   const pendingCount = orders.filter((order) => order.status === "PENDING").length;
   const confirmedCount = orders.filter((order) => order.status === "CONFIRMED").length;
   const deliveredCount = orders.filter((order) => order.status === "DELIVERED").length;
@@ -75,24 +94,26 @@ export default async function AdminDashboardPage() {
             <h1>Commandes<span>.</span></h1>
             <p>Suivez et gérez les commandes de vos clients.</p>
           </div>
-          {!ordersError && (
+          {!hasOrdersError && (
             <span className="admin-order-count">{orders.length} commande{orders.length === 1 ? "" : "s"}</span>
           )}
         </div>
 
-        {ordersError && (
+        {hasOrdersError && (
           <p className="admin-data-error" role="alert">
             Impossible de charger les commandes. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
+            <br />
+            <strong>Détail de l’erreur :</strong> {ordersError}
           </p>
         )}
-        {!ordersError && <div className="admin-stats">
+        {!hasOrdersError && <div className="admin-stats">
           <article><span>Total commandes</span><strong>{orders.length}</strong><small>Toutes périodes</small></article>
           <article><span>En attente</span><strong>{pendingCount}</strong><small>À traiter</small></article>
           <article><span>Confirmées</span><strong>{confirmedCount}</strong><small>En préparation</small></article>
           <article><span>Livrées</span><strong>{deliveredCount}</strong><small>Commandes terminées</small></article>
         </div>}
 
-        {!ordersError && <section className="admin-table-card" aria-labelledby="orders-title">
+        {!hasOrdersError && <section className="admin-table-card" aria-labelledby="orders-title">
           <div className="admin-table-heading">
             <div><h2 id="orders-title">Toutes les commandes</h2><p>Les commandes les plus récentes apparaissent en premier.</p></div>
           </div>
@@ -174,12 +195,14 @@ export default async function AdminDashboardPage() {
           )}
         </section>}
 
-        {shippingRatesError && (
+        {hasShippingRatesError && (
           <p className="admin-data-error" role="alert">
             Impossible de charger les tarifs de livraison. Vérifiez DATABASE_URL et que le schéma PostgreSQL a été poussé sur cette base.
+            <br />
+            <strong>Détail de l’erreur :</strong> {shippingRatesError}
           </p>
         )}
-        {!shippingRatesError && <section className="admin-table-card shipping-settings-card" aria-labelledby="shipping-settings-title">
+        {!hasShippingRatesError && <section className="admin-table-card shipping-settings-card" aria-labelledby="shipping-settings-title">
           <div className="admin-table-heading">
             <div>
               <h2 id="shipping-settings-title">Tarifs de livraison par wilaya</h2>
