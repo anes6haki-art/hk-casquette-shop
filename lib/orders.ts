@@ -211,19 +211,14 @@ export async function getOrdersForAdmin() {
 }
 
 export async function ensureShippingRates() {
-  if (await prisma.shippingRate.count() === WILAYAS.length) {
-    return;
-  }
-
-  await prisma.$transaction(
-    WILAYAS.map((wilaya) =>
-      prisma.shippingRate.upsert({
-        where: { wilaya },
-        create: { wilaya, homePrice: SHIPPING_FEE, deskPrice: Math.round(SHIPPING_FEE / 2) },
-        update: {},
-      }),
-    ),
-  );
+  await prisma.shippingRate.createMany({
+    data: WILAYAS.map((wilaya) => ({
+      wilaya,
+      homePrice: SHIPPING_FEE,
+      deskPrice: Math.round(SHIPPING_FEE / 2),
+    })),
+    skipDuplicates: true,
+  });
 }
 
 export async function getShippingRatesForCheckout(): Promise<ShippingRateDto[]> {
@@ -262,10 +257,9 @@ export async function updateShippingRate(
     }
   }
 
-  return prisma.shippingRate.upsert({
+  return prisma.shippingRate.update({
     where: { wilaya },
-    create: { wilaya, homePrice, deskPrice },
-    update: { homePrice, deskPrice },
+    data: { homePrice, deskPrice },
     select: { wilaya: true },
   });
 }
