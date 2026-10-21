@@ -36,12 +36,6 @@ export function getWilayaLabelAr(wilaya: string) {
 }
 
 export const ORDER_SIZES = ["Standard", "S", "M", "L"] as const;
-export const ORDER_SIZE_LABELS_AR: Record<(typeof ORDER_SIZES)[number], string> = {
-  Standard: "قياسي",
-  S: "صغير",
-  M: "متوسط",
-  L: "كبير",
-};
 
 const COLOR_LABELS_AR: Record<string, string> = {
   Noir: "أسود",
@@ -54,7 +48,6 @@ const COLOR_LABELS_AR: Record<string, string> = {
   "Vert Forêt": "أخضر غابي",
   Terracotta: "طوبي",
   "Bleu Ciel": "أزرق سماوي",
-  Standard: "قياسي",
 };
 
 const PRODUCT_TITLE_LABELS_AR: Record<string, string> = {

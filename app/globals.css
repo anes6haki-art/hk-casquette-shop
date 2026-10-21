@@ -4770,16 +4770,22 @@ html[dir="rtl"] .shop-footer {
 .product-page .order-color-option,
 .product-page .order-size-option {
   display: inline-flex;
-  min-height: 40px;
+  min-height: 34px;
   align-items: center;
   gap: 7px;
-  padding: 5px 12px;
+  padding: 5px 9px;
   border: 1px solid #3f3f46;
   border-radius: 999px;
   background: #202023;
   color: #d4d4d8;
-  font-size: 13px;
+  font-size: 10px;
   cursor: pointer;
+}
+
+.product-page .order-size-option {
+  min-height: 34px;
+  padding: 5px 9px;
+  font-size: 10px;
 }
 
 .product-page .order-color-option.is-selected,

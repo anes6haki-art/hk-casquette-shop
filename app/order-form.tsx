@@ -8,7 +8,6 @@ import {
   getColorLabelAr,
   getProductTitleAr,
   getWilayaLabelAr,
-  ORDER_SIZE_LABELS_AR,
   SHIPPING_FEE,
   WILAYAS,
   type ProductDto,
@@ -146,14 +145,14 @@ export default function OrderForm({
                   onClick={() => setSelectedSize(size)}
                   aria-pressed={selectedSize === size}
                 >
-                  {ORDER_SIZE_LABELS_AR[size]}
+                  {size}
                 </button>
               ))}
             </div>
           </div>
           <div className="order-option-group product-direct-quantity">
             <span>الكمية</span>
-            <div className="quantity-control" aria-label={`الكمية: ${quantity}`}>
+            <div className="quantity-control" aria-label={`Quantité pour ${selectedColor} ${selectedSize}`}>
               <button
                 type="button"
                 onClick={() => setQuantity((current) => Math.max(1, current - 1))}
@@ -235,7 +234,7 @@ export default function OrderForm({
 
         <div className="price-breakdown" aria-live="polite">
           <div className="order-line-summary">
-            <span>{quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(selectedColor)} · {ORDER_SIZE_LABELS_AR[selectedSize]}</span>
+            <span>{quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(selectedColor)} · {selectedSize}</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
           <div>
@@ -275,7 +274,7 @@ export default function OrderForm({
               <div className="summary-items">
                 <span>المنتجات</span>
                 <strong>
-                  {order.quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(order.color)} · {ORDER_SIZE_LABELS_AR[order.size as keyof typeof ORDER_SIZE_LABELS_AR]}
+                  {order.quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(order.color)} · {order.size}
                 </strong>
               </div>
               <div><span>التوصيل</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {order.commune}، {getWilayaLabelAr(order.wilaya)}</strong></div>
