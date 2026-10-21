@@ -2,7 +2,16 @@
 
 import Image from "next/image";
 import { useState, useTransition, type ChangeEvent, type FormEvent } from "react";
-import { getProductDescriptionAr, getProductTitleAr, type ProductDto } from "@/lib/store-data";
+import {
+  getProductDescriptionAr,
+  getProductTitleAr,
+  type ProductDto,
+} from "@/lib/store-data";
+import {
+  ACCEPTED_IMAGE_INPUT,
+  MAX_UPLOAD_IMAGES,
+  uploadProductImages,
+} from "./image-upload";
 import { deleteProductAction, saveProductAction } from "./actions";
 
 type ProductForm = {
@@ -52,6 +61,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   function updateField<K extends keyof ProductForm>(key: K, value: ProductForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -112,28 +122,17 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
     if (files.length === 0) return;
 
     const existingImageCount = parseImageUrls(form.imageUrls).length;
-    if (existingImageCount + files.length > 8) {
-      setError("يمكن إضافة 8 صور كحد أقصى.");
+    if (existingImageCount + files.length > MAX_UPLOAD_IMAGES) {
+      setError(`يمكن إضافة ${MAX_UPLOAD_IMAGES} صور كحد أقصى.`);
       return;
     }
 
     setError(null);
     setSuccess(null);
     setIsUploading(true);
+    setUploadProgress(null);
     try {
-      const uploadData = new FormData();
-      for (const file of files) uploadData.append("images", file);
-      const response = await fetch("/admin/products/upload", {
-        method: "POST",
-        body: uploadData,
-      });
-      const result: { imageUrls?: string[]; error?: string } = await response.json();
-      if (!response.ok || !result.imageUrls) {
-        setError(result.error ?? "تعذر رفع الصور.");
-        return;
-      }
-
-      const uploadedUrls = result.imageUrls;
+      const uploadedUrls = await uploadProductImages(files, (message) => setUploadProgress(message));
       setForm((current) => {
         const imageUrls = parseImageUrls(current.imageUrls);
         return { ...current, imageUrls: [...imageUrls, ...uploadedUrls].join("\n") };
@@ -141,9 +140,10 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       setSuccess(`تم رفع ${uploadedUrls.length} صورة.`);
     } catch (uploadError) {
       console.error("Unable to upload product images:", uploadError);
-      setError("فشل الرفع. تحققوا من الاتصال وحاولوا مجدداً.");
+      setError(uploadError instanceof Error ? uploadError.message : "تعذر رفع الصور.");
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -154,25 +154,17 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
     if (files.length === 0) return;
 
     const existingImageCount = parseImageUrls(form.variants[index]?.images ?? "").length;
-    if (existingImageCount + files.length > 8) {
-      setError("يمكن إضافة 8 صور كحد أقصى لكل لون.");
+    if (existingImageCount + files.length > MAX_UPLOAD_IMAGES) {
+      setError(`يمكن إضافة ${MAX_UPLOAD_IMAGES} صور كحد أقصى لكل لون.`);
       return;
     }
 
     setError(null);
     setSuccess(null);
     setIsUploading(true);
+    setUploadProgress(null);
     try {
-      const uploadData = new FormData();
-      for (const file of files) uploadData.append("images", file);
-      const response = await fetch("/admin/products/upload", { method: "POST", body: uploadData });
-      const result: { imageUrls?: string[]; error?: string } = await response.json();
-      if (!response.ok || !result.imageUrls) {
-        setError(result.error ?? "تعذر رفع الصور.");
-        return;
-      }
-      const uploadedUrls = result.imageUrls;
-
+      const uploadedUrls = await uploadProductImages(files, (message) => setUploadProgress(message));
       setForm((current) => ({
         ...current,
         variants: current.variants.map((variant, variantIndex) =>
@@ -184,9 +176,10 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       setSuccess(`تمت إضافة ${uploadedUrls.length} صورة إلى اللون.`);
     } catch (uploadError) {
       console.error("Unable to upload product variant images:", uploadError);
-      setError("فشل الرفع. تحققوا من الاتصال وحاولوا مجدداً.");
+      setError(uploadError instanceof Error ? uploadError.message : "تعذر رفع الصور.");
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -307,10 +300,10 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
               <span>اختيار صور من جهازكم</span>
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
+                accept={ACCEPTED_IMAGE_INPUT}
                 multiple
                 disabled={isUploading || isPending}
-                onChange={handleImageUpload}
+                onChange={(event) => void handleImageUpload(event)}
               />
               <small>JPEG أو PNG أو WebP أو AVIF · 5 ميغابايت كحد أقصى للصورة · 8 صور إجمالاً.</small>
             </label>
@@ -370,7 +363,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                       <span>صور هذا اللون</span>
                       <input
                         type="file"
-                        accept="image/jpeg,image/png,image/webp,image/avif"
+                        accept={ACCEPTED_IMAGE_INPUT}
                         multiple
                         disabled={isUploading || isPending}
                         onChange={(event) => void handleVariantImageUpload(index, event)}
@@ -441,6 +434,11 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
           </label>
           {error && <p className="product-action-error" role="alert">{error}</p>}
           {success && <p className="product-action-success" role="status">{success}</p>}
+          {uploadProgress && (
+            <p className="product-upload-progress" role="status">
+              {uploadProgress}
+            </p>
+          )}
           <div className="product-form-actions">
             <button className="admin-primary-button" type="submit" disabled={isPending || isUploading}>
               {isUploading ? "جارٍ رفع الصور…" : isPending ? "جارٍ الحفظ…" : form.id ? "حفظ التعديلات" : "إنشاء المنتج"}

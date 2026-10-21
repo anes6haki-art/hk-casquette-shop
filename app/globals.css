@@ -1819,6 +1819,12 @@ a {
   color: #547442;
 }
 
+.product-upload-progress {
+  margin: 14px 0 0;
+  font-size: 10px;
+  color: #8a6a3d;
+}
+
 .products-list-heading {
   display: flex;
   justify-content: space-between;
@@ -5102,3 +5108,74 @@ html[dir="rtl"] .shop-footer {
     padding: 23px 18px;
   }
 }
+
+/* =========================================================
+   Admin dashboard dark theme — mirrors the product page.
+   Zinc surfaces with high-contrast amber accent #f59e0b.
+   ========================================================= */
+
+.admin-page,
+.admin-login-page {
+  --admin-bg: #09090b;
+  --admin-surface: #18181b;
+  --admin-surface-raised: #202023;
+  --admin-line: #27272a;
+  --admin-line-strong: #3f3f46;
+  --admin-text: #fafafa;
+  --admin-text-soft: #d4d4d8;
+  --admin-muted: #a1a1aa;
+  --admin-amber: #f59e0b;
+  --admin-amber-light: #fbbf24;
+}
+
+.admin-page {
+  min-height: 100svh;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.admin-page .shop-brand {
+  color: #f4f4f5;
+}
+
+.admin-page .shop-brand-mark {
+  background: #d97706;
+  color: #17110a;
+}
+
+.admin-page .admin-header {
+  border-bottom: 1px solid var(--admin-line);
+  background: #0c0c0f;
+}
+
+.admin-page .admin-header-links a {
+  color: var(--admin-muted);
+}
+
+.admin-page .admin-header-links a:hover,
+.admin-page .admin-header-links a[aria-current="page"] {
+  background: rgb(245 158 11 / 14%);
+  color: var(--admin-amber-light);
+}
+
+.admin-page .admin-access {
+  color: var(--admin-text-soft);
+}
+
+.admin-page .admin-access > span {
+  background: #4ade80;
+  box-shadow: 0 0 0 3px rgb(74 222 128 / 20%);
+}
+
+.admin-page .admin-logout-button {
+  border: 1px solid var(--admin-line-strong);
+  background: var(--admin-surface);
+  color: var(--admin-text-soft);
+}
+
+.admin-page .admin-logout-button:hover {
+  border-color: var(--admin-amber);
+  background: var(--admin-surface-raised);
+  color: var(--admin-amber-light);
+}
+
