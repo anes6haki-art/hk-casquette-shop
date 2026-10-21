@@ -251,7 +251,7 @@ export default function OrderForm({
           type="submit"
           disabled={isSubmitting || !selectedShippingRate || product.stockQuantity < 1 || quantity > product.stockQuantity}
         >
-          {product.stockQuantity < 1 ? "نفدت الكمية" : isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب"}
+          {product.stockQuantity < 1 ? "نفدت الكمية" : isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
         </button>
         <p className="form-note"><span aria-hidden="true">✓</span> لا يوجد دفع إلكتروني. الدفع عند الاستلام.</p>
       </form>

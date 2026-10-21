@@ -3,8 +3,6 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { getStorefrontProducts } from "@/lib/products";
 import { getColorLabelAr, getProductTitleAr } from "@/lib/store-data";
-import { CartButton } from "./cart/cart-context";
-import ProductCardCartButton from "./cart/product-card-cart-button";
 
 export const instant = false;
 
@@ -38,7 +36,6 @@ export default async function Home() {
           <a href="#engagements">التوصيل والدفع</a>
         </nav>
         <div className="shop-header-actions">
-          <CartButton />
           <Link className="shop-header-cta" href="#catalogue">تسوقوا القبعات <span>↗</span></Link>
         </div>
       </header>
@@ -105,7 +102,6 @@ export default async function Home() {
                       <Link className="cap-buy-button" href={`/products/${product.id}`} aria-disabled={product.stockQuantity < 1}>
                         أطلب الآن <span>→</span>
                       </Link>
-                      <ProductCardCartButton product={product} />
                     </div>
                   </div>
                 </div>

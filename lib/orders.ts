@@ -82,13 +82,13 @@ export async function createOrder(input: NewOrder) {
   const products = await Promise.all(uniqueProductIds.map((productId) => getStorefrontProduct(productId)));
   const productById = new Map(products.filter((product) => product !== null).map((product) => [product.id, product]));
   if (productById.size !== uniqueProductIds.length) {
-    throw new Error("أحد المنتجات في السلة لم يعد متاحاً.");
+    throw new Error("أحد المنتجات لم يعد متاحاً.");
   }
 
   const quantityByProduct = new Map<string, number>();
   const orderItems = requestedItems.map((item) => {
     const product = productById.get(item.productId);
-    if (!product) throw new Error("أحد المنتجات في السلة لم يعد متاحاً.");
+    if (!product) throw new Error("أحد المنتجات لم يعد متاحاً.");
 
     quantityByProduct.set(item.productId, (quantityByProduct.get(item.productId) ?? 0) + item.quantity);
 

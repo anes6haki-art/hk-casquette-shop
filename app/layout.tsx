@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { CartProvider } from "./cart/cart-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,9 +10,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
-        <CartProvider>{children}</CartProvider>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
