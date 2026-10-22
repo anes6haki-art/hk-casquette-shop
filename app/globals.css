@@ -8,6 +8,7 @@
   --lime: #d6ee8c;
   --paper: #f8f8f3;
   --line: #e8e9e1;
+  --whatsapp: #25D366;
 }
 
 @theme inline {
@@ -5177,5 +5178,82 @@ html[dir="rtl"] .shop-footer {
   border-color: var(--admin-amber);
   background: var(--admin-surface-raised);
   color: var(--admin-amber-light);
+}
+
+.whatsapp-button-product-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 12px 18px;
+  background: #fff;
+  border: 2px solid var(--whatsapp);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.whatsapp-button-product-page:hover {
+  background: var(--whatsapp);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-button-product-page svg {
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.whatsapp-button-product-page:hover svg {
+  transform: scale(1.1);
+}
+
+.whatsapp-float-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 60px;
+  height: 60px;
+  background: var(--whatsapp);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
+}
+
+.whatsapp-float-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+}
+
+.whatsapp-float-icon svg {
+  width: 32px;
+  height: 32px;
+  fill: #fff;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+[dir=\"rtl\"] .whatsapp-float-icon {
+  right: auto;
+  left: 20px;
 }
 

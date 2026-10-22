@@ -114,7 +114,7 @@ export default async function Home() {
       <footer className="shop-footer">
         <Link className="shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>Hk casquette shop</span></Link>
         <p>أناقتكم في كل مكان في الجزائر.</p>
-        <Link href="/admin">مساحة الإدارة</Link>
+
       </footer>
     </main>
   );

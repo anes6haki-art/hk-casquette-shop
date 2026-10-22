@@ -36,7 +36,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[id]"
       <footer className="shop-footer">
         <Link className="shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>متجر إتش كيه للقبعات</span></Link>
         <p>أناقتكم في كل مكان في الجزائر.</p>
-        <Link href="/admin">مساحة الإدارة</Link>
+        
       </footer>
     </main>
   );
