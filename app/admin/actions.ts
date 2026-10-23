@@ -74,6 +74,14 @@ export async function updateOrderStatus(formData: FormData) {
   revalidatePath("/admin");
 }
 
+export async function deleteOrderAction(formData: FormData) {
+  const orderId = formData.get("orderId");
+  if (typeof orderId !== "string") throw new Error("Invalid order id");
+  const { deleteOrder } = await import("@/lib/orders");
+  await deleteOrder(orderId);
+  revalidatePath("/admin");
+}
+
 export async function updateShippingRate(formData: FormData) {
   const wilaya = formData.get("wilaya");
   const homePrice = formData.get("homePrice");

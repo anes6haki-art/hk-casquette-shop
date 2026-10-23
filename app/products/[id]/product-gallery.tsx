@@ -17,15 +17,17 @@ function CapIllustration() {
 export default function ProductGallery({
   title,
   imageUrls,
-  variants,
+    variants,
   selectedVariantIndex,
   onSelectVariant,
+  isDisabled = false,
 }: {
   title: string;
   imageUrls: string[];
   variants: ProductVariantDto[];
-  selectedVariantIndex: number;
+    selectedVariantIndex: number;
   onSelectVariant: (index: number) => void;
+  isDisabled?: boolean;
 }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const selectedVariant = variants[selectedVariantIndex];
@@ -75,11 +77,12 @@ export default function ProductGallery({
           </span>
           <div className="product-color-options">
             {variants.map((variant, index) => (
-              <button
-                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}`}
+                            <button
+                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}`}
                 key={variant.id}
                 type="button"
-                onClick={() => onSelectVariant(index)}
+                onClick={() => !isDisabled && onSelectVariant(index)}
+                disabled={isDisabled}
                 aria-label={getColorLabelAr(variant.colorName)}
                 aria-pressed={selectedVariantIndex === index}
               >

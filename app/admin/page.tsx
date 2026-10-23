@@ -8,7 +8,7 @@ import AdminAuthFallback, {
   getAdminAuthFallbackMessage,
   getAdminErrorDetail,
 } from "./admin-auth-fallback";
-import { logoutAdmin, updateOrderStatus, updateShippingRate } from "./actions";
+import { logoutAdmin, updateOrderStatus, updateShippingRate, deleteOrderAction } from "./actions";
 import DhdDispatchButton from "./dhd-dispatch-button";
 
 export const instant = false;
@@ -139,6 +139,7 @@ export default async function AdminDashboardPage() {
                     <th>الحالة</th>
                     <th>تحديث</th>
                     <th>شحن DHD</th>
+                    <th>حذف</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -165,9 +166,9 @@ export default async function AdminDashboardPage() {
                           timeStyle: "short",
                         }).format(order.createdAt)}</td>
                         <td><span className={`status-badge status-${status.toLowerCase()}`}>{statusLabels[status]}</span></td>
-                        <td>
-                          <form className="admin-status-form" action={updateOrderStatus}>
-                            <input type="hidden" name="orderId" value={order.id} />
+                                                <td>
+                                                  <form className="admin-status-form" action={updateOrderStatus}>
+                                                    <input type="hidden" name="orderId" value={order.id} />
                             <select name="status" defaultValue={status} aria-label={`حالة طلب ${order.name}`}>
                               {ORDER_STATUSES.map((option) => <option key={option} value={option}>{statusLabels[option]}</option>)}
                             </select>
@@ -184,7 +185,13 @@ export default async function AdminDashboardPage() {
                             <DhdDispatchButton orderId={order.id} />
                           ) : (
                             <span className="dhd-unavailable">متاح بعد التأكيد</span>
-                          )}
+                                                    )}
+                        </td>
+                        <td>
+                          <form action={deleteOrderAction} style={{ display: "inline" }}>
+                            <input type="hidden" name="orderId" value={order.id} />
+                            <button type="submit" style={{ background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", padding: "6px 10px", cursor: "pointer" }} onClick={(e) => { if (!window.confirm("حذف الطلب؟")) e.preventDefault(); }}>حذف</button>
+                          </form>
                         </td>
                       </tr>
                     );

@@ -29,6 +29,7 @@ export default function ProductDirectCheckout({
         variants={product.variants}
         selectedVariantIndex={selectedVariantIndex}
         onSelectVariant={setSelectedVariantIndex}
+        isDisabled={product.stockQuantity < 1}
       />
       <div className="product-detail-copy">
         <span className="shop-eyebrow"><span /> متجر إتش كيه للقبعات · المجموعة</span>
