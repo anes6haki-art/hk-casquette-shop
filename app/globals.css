@@ -5021,7 +5021,7 @@ html[dir="rtl"] .shop-footer {
 }
 
 /* =========================================================
-   Admin dashboard dark theme Ã¢â‚¬â€ mirrors the product page.
+   Admin dashboard dark theme â€” mirrors the product page.
    Zinc surfaces with high-contrast amber accent #f59e0b.
    ========================================================= */
 
@@ -5125,13 +5125,21 @@ html[dir="rtl"] .shop-footer {
   transform: scale(1.1);
 }
 
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+  right: auto;
+  left: 20px;
+}
+
+.product-color-option.is-disabled, .order-size-option.is-disabled { opacity: 0.45; pointer-events: none; filter: grayscale(1); }
+
+.admin-page { background: #0f172a; color: #f1f5f9; }
 
 .whatsapp-float-pill { position: fixed; bottom: 20px; right: calc(50% - min(90px, 480px) + 20px); left: auto; z-index: 1000; display: inline-flex; align-items: center; gap: 10px; max-width: min(calc(100vw - 32px), 280px); padding: 10px 16px; background: #fff; border: 2px solid #25D366; border-radius: 999px; box-shadow: 0 2px 10px rgba(37,211,102,0.15); color: #1a1a1a; font-size: 14px; font-weight: 600; line-height: 1.2; text-decoration: none; transition: box-shadow 0.25s ease, transform 0.25s ease; }
 .whatsapp-float-pill:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,211,102,0.35); border-color: #25D366; }
 .whatsapp-float-pill svg { width: 22px; height: 22px; flex-shrink: 0; fill: #25D366; }
 .whatsapp-float-pill span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 640px) { .whatsapp-float-pill { right: 12px; left: 12px; max-width: none; padding: 10px 14px; font-size: 13px; } [dir="rtl"] .whatsapp-float-pill { right: 12px; left: auto; }
-
-
-}
-}
