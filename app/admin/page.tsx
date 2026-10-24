@@ -8,7 +8,8 @@ import AdminAuthFallback, {
   getAdminAuthFallbackMessage,
   getAdminErrorDetail,
 } from "./admin-auth-fallback";
-import { logoutAdmin, updateOrderStatus, updateShippingRate, deleteOrderAction } from "./actions";
+import { logoutAdmin, updateOrderStatus, updateShippingRate } from "./actions";
+import DeleteOrderButton from "./delete-order-button";
 import DhdDispatchButton from "./dhd-dispatch-button";
 
 export const instant = false;
@@ -188,11 +189,8 @@ export default async function AdminDashboardPage() {
                                                     )}
                         </td>
                         <td>
-                          <form action={deleteOrderAction} style={{ display: "inline" }}>
-                            <input type="hidden" name="orderId" value={order.id} />
-                            <button type="submit" style={{ background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", padding: "6px 10px", cursor: "pointer" }} onClick={(e) => { if (!window.confirm("حذف الطلب؟")) e.preventDefault(); }}>حذف</button>
-                          </form>
-                        </td>
+                                                  <DeleteOrderButton orderId={order.id} />
+                                                </td>
                       </tr>
                     );
                   })}
