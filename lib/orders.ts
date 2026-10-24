@@ -264,6 +264,28 @@ export async function updateShippingRate(
   });
 }
 
+export async function deleteOrder(orderId: string) {
+  if (!(await hasAdminSession())) {
+    throw new Error("غير مصرح بحذف الطلب.");
+  }
+  if (!orderId || orderId.length > 100) {
+    throw new Error("معرّف الطلب غير صالح.");
+  }
+
+  const existingOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true },
+  });
+  if (!existingOrder) {
+    throw new Error("لم يتم العثور على الطلب.");
+  }
+
+  return prisma.order.delete({
+    where: { id: existingOrder.id },
+    select: { id: true },
+  });
+}
+
 export async function updateOrderStatus(orderId: string, status: string) {
   if (!(await hasAdminSession())) {
     throw new Error("غير مصرح بتعديل الطلب.");

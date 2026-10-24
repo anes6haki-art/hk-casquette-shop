@@ -12,6 +12,7 @@ import {
 import {
   updateOrderStatus as saveOrderStatus,
   updateShippingRate as saveShippingRate,
+  deleteOrder,
 } from "@/lib/orders";
 
 export type LoginState = {
@@ -77,7 +78,6 @@ export async function updateOrderStatus(formData: FormData) {
 export async function deleteOrderAction(formData: FormData) {
   const orderId = formData.get("orderId");
   if (typeof orderId !== "string") throw new Error("Invalid order id");
-  const { deleteOrder } = await import("@/lib/orders");
   await deleteOrder(orderId);
   revalidatePath("/admin");
 }

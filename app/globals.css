@@ -5257,4 +5257,6 @@ html[dir="rtl"] .shop-footer {
   left: 20px;
 }
 
-. p r o d u c t - c o l o r - o p t i o n . i s - d i s a b l e d ,   . o r d e r - s i z e - o p t i o n . i s - d i s a b l e d   {   o p a c i t y :   0 . 4 5 ;   c u r s o r :   n o t - a l l o w e d ;   b a c k g r o u n d :   # e 5 e 5 e 5 ;   f i l t e r :   g r a y s c a l e ( 1 ) ;   } 
+.product-color-option.is-disabled, .order-size-option.is-disabled { opacity: 0.45; pointer-events: none; filter: grayscale(1); }
+
+.admin-page { background: #0f172a; color: #f1f5f9; }
