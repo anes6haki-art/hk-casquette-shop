@@ -161,6 +161,8 @@ export type ProductVariantDto = {
   id: string;
   colorName: string;
   colorHex: string;
+  size: string;
+  stock: number;
   images: string[];
 };
 

@@ -29,6 +29,8 @@ type ProductForm = {
 type VariantForm = {
   colorName: string;
   colorHex: string;
+  size: string;
+  stock: string;
   images: string;
 };
 
@@ -83,7 +85,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
     }
     setForm((current) => ({
       ...current,
-      variants: [...current.variants, { colorName: "", colorHex: "#18181b", images: "" }],
+      variants: [...current.variants, { colorName: "", colorHex: "#18181b", size: "Standard", stock: "0", images: "" }],
     }));
     setError(null);
   }
@@ -99,9 +101,11 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       discountedPrice: String(product.discountedPrice),
       stockQuantity: String(product.stockQuantity),
       imageUrls: product.imageUrls.join("\n"),
-      variants: product.variants.map((variant) => ({
+            variants: product.variants.map((variant) => ({
         colorName: variant.colorName,
         colorHex: variant.colorHex,
+        size: variant.size ?? "Standard",
+        stock: String(variant.stock ?? 0),
         images: variant.images.join("\n"),
       })),
       isActive: product.isActive,
@@ -206,11 +210,13 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       discountedPrice: Number(form.discountedPrice),
       stockQuantity: Number(form.stockQuantity),
       imageUrls,
-      variants: form.variants
-        .filter((variant) => variant.colorName.trim() || variant.images.trim())
+            variants: form.variants
+        .filter((variant) => variant.colorName.trim() || variant.images.trim() || variant.stock !== "" || variant.size)
         .map((variant) => ({
           colorName: variant.colorName,
           colorHex: variant.colorHex,
+          size: variant.size,
+          stock: Number(variant.stock) || 0,
           images: parseImageUrls(variant.images),
         })),
       isActive: form.isActive,
@@ -351,12 +357,35 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                         onChange={(event) => updateVariant(index, "colorName", event.currentTarget.value)}
                       />
                     </label>
-                    <label className="product-field">
+                                        <label className="product-field">
                       <span>رمز اللون</span>
                       <input
                         type="color"
                         value={variant.colorHex}
                         onChange={(event) => updateVariant(index, "colorHex", event.currentTarget.value)}
+                      />
+                    </label>
+                    <label className="product-field">
+                      <span>المقاس</span>
+                      <select
+                        value={variant.size}
+                        onChange={(event) => updateVariant(index, "size", event.currentTarget.value)}
+                      >
+                        <option value="Standard">Standard</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                      </select>
+                    </label>
+                    <label className="product-field">
+                      <span>المخزون</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="1000000"
+                        step="1"
+                        value={variant.stock}
+                        onChange={(event) => updateVariant(index, "stock", event.currentTarget.value)}
                       />
                     </label>
                     <label className="product-field product-field-wide">

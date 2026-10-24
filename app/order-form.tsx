@@ -55,8 +55,9 @@ export default function OrderForm({
   shippingRates: ShippingRateDto[];
   selectedVariantIndex?: number;
 }) {
-  const selectedVariant = product.variants[selectedVariantIndex];
+    const selectedVariant = product.variants[selectedVariantIndex];
   const selectedColor = selectedVariant?.colorName ?? "Standard";
+  const selectedColorStock = selectedVariant?.stock ?? 0;
   const selectedVariantId = selectedVariant?.id;
   const [selectedSize, setSelectedSize] = useState<(typeof AVAILABLE_SIZES)[number]>("Standard");
   const [quantity, setQuantity] = useState(1);
@@ -74,7 +75,7 @@ export default function OrderForm({
     : SHIPPING_FEE;
   const subtotal = product.discountedPrice * quantity;
   const total = subtotal + shippingFee;
-  const maxQuantity = Math.max(1, Math.min(10, product.stockQuantity));
+  const maxQuantity = Math.max(1, Math.min(10, selectedColorStock));
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -138,13 +139,14 @@ export default function OrderForm({
           <div className="order-option-group">
             <span>المقاس</span>
             <div className="order-size-options">
-              {AVAILABLE_SIZES.map((size) => (
+                            {AVAILABLE_SIZES.map((size) => (
                 <button
-                  className={`order-size-option${selectedSize === size ? " is-selected" : ""}`}
+                  className={`order-size-option${selectedSize === size ? " is-selected" : ""}${selectedColorStock === 0 ? " is-disabled" : ""}`}
                   key={size}
                   type="button"
-                  onClick={() => setSelectedSize(size)}
+                  onClick={() => selectedColorStock !== 0 && setSelectedSize(size)}
                   aria-pressed={selectedSize === size}
+                  disabled={selectedColorStock === 0}
                 >
                   {size}
                 </button>
@@ -165,7 +167,7 @@ export default function OrderForm({
                 type="button"
                 onClick={() => setQuantity((current) => Math.min(maxQuantity, current + 1))}
                 aria-label="زيادة الكمية"
-                disabled={quantity >= maxQuantity || product.stockQuantity < 1}
+                disabled={quantity >= maxQuantity || selectedColorStock < 1}
               >+</button>
             </div>
           </div>
@@ -249,9 +251,9 @@ export default function OrderForm({
         <button
           className="submit-button"
           type="submit"
-          disabled={isSubmitting || !selectedShippingRate || product.stockQuantity < 1 || quantity > product.stockQuantity}
+          disabled={isSubmitting || !selectedShippingRate || selectedColorStock < 1 || quantity > selectedColorStock}
         >
-          {product.stockQuantity < 1 ? "نفدت الكمية" : isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
+          {selectedColorStock < 1 ? "نفدت الكمية" : isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
         </button>
         <p className="form-note"><span aria-hidden="true">✓</span> لا يوجد دفع إلكتروني. الدفع عند الاستلام.</p>
       </form>

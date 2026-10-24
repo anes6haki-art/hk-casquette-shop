@@ -59,6 +59,8 @@ model ProductVariant {
   productId String
   colorName String
   colorHex  String
+  size      String   @default("Standard")
+  stock     Int      @default(0)
   images    String   @default("[]")
   position  Int      @default(0)
   createdAt DateTime @default(now())

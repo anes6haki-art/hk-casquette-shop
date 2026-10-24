@@ -76,13 +76,13 @@ export default function ProductGallery({
             اللون: <strong>{selectedVariant ? getColorLabelAr(selectedVariant.colorName) : ""}</strong>
           </span>
           <div className="product-color-options">
-            {variants.map((variant, index) => (
-                            <button
-                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}${isDisabled ? " is-disabled" : ""}`}
+                        {variants.map((variant, index) => (
+              <button
+                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}${isDisabled || variant.stock === 0 ? " is-disabled" : ""}`}
                 key={variant.id}
                 type="button"
-                onClick={() => !isDisabled && onSelectVariant(index)}
-                disabled={isDisabled}
+                onClick={() => !(isDisabled || variant.stock === 0) && onSelectVariant(index)}
+                disabled={isDisabled || variant.stock === 0}
                 aria-label={getColorLabelAr(variant.colorName)}
                 aria-pressed={selectedVariantIndex === index}
               >

@@ -6,7 +6,7 @@ import type { ProductDto } from "@/lib/store-data";
 
 export type ProductInput = Omit<ProductDto, "id" | "updatedAt" | "variants"> & {
   id?: string;
-  variants: Omit<ProductDto["variants"][number], "id">[];
+  variants: Omit<ProductDto["variants"][number], "id">[] & { size: string; stock: number }[];
 };
 
 const productSelect = {
@@ -22,6 +22,8 @@ const productSelect = {
       id: true,
       colorName: true,
       colorHex: true,
+      size: true,
+      stock: true,
       images: true,
     },
     orderBy: { position: "asc" },
@@ -38,7 +40,7 @@ function toProductDto(product: {
   discountedPrice: number;
   stockQuantity: number;
   imageUrls: string;
-  variants: { id: string; colorName: string; colorHex: string; images: string }[];
+  variants: { id: string; colorName: string; colorHex: string; size: string; stock: number; images: string }[];
   isActive: boolean;
   updatedAt: Date;
 }): ProductDto {
@@ -57,6 +59,8 @@ function toProductDto(product: {
       id: variant.id,
       colorName: variant.colorName,
       colorHex: variant.colorHex,
+      size: variant.size,
+      stock: variant.stock,
       images: parseImages(variant.images, `variant ${variant.id}`),
     })),
   };
@@ -126,12 +130,23 @@ function validateProduct(input: ProductInput) {
     if (!/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(variant.colorHex)) {
       throw new Error("يجب إدخال رمز سداسي عشري صالح لكل لون.");
     }
-    if (!Array.isArray(variant.images) || variant.images.length === 0) {
+        if (!Array.isArray(variant.images) || variant.images.length === 0) {
       throw new Error(`أضيفوا صورة واحدة على الأقل للون « ${colorName} ».`);
+    }
+    const size = (variant as any).size?.trim() || "Standard";
+    const allowedSizes = ["Standard", "S", "M", "L"];
+    if (!allowedSizes.includes(size)) {
+      throw new Error(`المقاس يجب أن يكون أحد القيم: ${allowedSizes.join(", ")}.`);
+    }
+    const stock = (variant as any).stock ?? 0;
+    if (!Number.isSafeInteger(stock) || stock < 0 || stock > 1_000_000) {
+      throw new Error(`يجب أن يكون المخزون عدداً صحيحاً بين 0 و1,000,000 لكل لون « ${colorName} ».`);
     }
     return {
       colorName,
       colorHex: variant.colorHex.toLowerCase(),
+      size,
+      stock,
       images: validateImageUrls(variant.images),
     };
   });
@@ -182,11 +197,13 @@ export async function saveProduct(input: ProductInput): Promise<ProductDto> {
     stockQuantity: input.stockQuantity,
     imageUrls: JSON.stringify(imageUrls),
     isActive: input.isActive,
-    variants: {
+        variants: {
       deleteMany: {},
       create: variants.map((variant, position) => ({
         colorName: variant.colorName,
         colorHex: variant.colorHex,
+        size: variant.size,
+        stock: variant.stock,
         images: JSON.stringify(variant.images),
         position,
       })),
