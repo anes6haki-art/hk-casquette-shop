@@ -26,11 +26,12 @@ type ProductForm = {
   isActive: boolean;
 };
 
+type SizeForm = { size: string; stock: string };
+
 type VariantForm = {
   colorName: string;
   colorHex: string;
-  size: string;
-  stock: string;
+  sizeOptions: SizeForm[];
   images: string;
 };
 
@@ -69,12 +70,27 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function updateVariant(index: number, key: keyof VariantForm, value: string) {
+    function updateVariant(index: number, key: keyof VariantForm, value: string | SizeForm[]) {
     setForm((current) => ({
       ...current,
       variants: current.variants.map((variant, variantIndex) =>
         variantIndex === index ? { ...variant, [key]: value } : variant,
       ),
+    }));
+  }
+
+  function updateSizeOption(variantIndex: number, optionIndex: number, key: keyof SizeForm, value: string) {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant, vIdx) => {
+        if (vIdx !== variantIndex) return variant;
+        return {
+          ...variant,
+          sizeOptions: variant.sizeOptions.map((opt, oIdx) =>
+            oIdx === optionIndex ? { ...opt, [key]: value } : opt,
+          ),
+        };
+      }),
     }));
   }
 
@@ -85,7 +101,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
     }
     setForm((current) => ({
       ...current,
-      variants: [...current.variants, { colorName: "", colorHex: "#18181b", size: "Standard", stock: "0", images: "" }],
+      variants: [...current.variants, { colorName: "", colorHex: "#18181b", sizeOptions: [{ size: "Standard", stock: "0" }], images: "" }],
     }));
     setError(null);
   }
@@ -101,13 +117,15 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       discountedPrice: String(product.discountedPrice),
       stockQuantity: String(product.stockQuantity),
       imageUrls: product.imageUrls.join("\n"),
-            variants: product.variants.map((variant) => ({
-        colorName: variant.colorName,
-        colorHex: variant.colorHex,
-        size: variant.size ?? "Standard",
-        stock: String(variant.stock ?? 0),
-        images: variant.images.join("\n"),
-      })),
+            variants: (() => {
+              const grouped: Record<string, { colorName: string; colorHex: string; images: string; sizeOptions: SizeForm[] }> = {};
+              for (const v of product.variants) {
+                const key = v.colorName + v.colorHex;
+                if (!grouped[key]) grouped[key] = { colorName: v.colorName, colorHex: v.colorHex, images: v.images.join("\n"), sizeOptions: [] };
+                grouped[key].sizeOptions.push({ size: v.size ?? "Standard", stock: String(v.stock ?? 0) });
+              }
+              return Object.values(grouped);
+            })(),
       isActive: product.isActive,
     });
     document.getElementById("product-editor")?.scrollIntoView({ behavior: "smooth" });
@@ -211,14 +229,18 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
       stockQuantity: Number(form.stockQuantity),
       imageUrls,
             variants: form.variants
-        .filter((variant) => variant.colorName.trim() || variant.images.trim() || variant.stock !== "" || variant.size)
-        .map((variant) => ({
-          colorName: variant.colorName,
-          colorHex: variant.colorHex,
-          size: variant.size,
-          stock: Number(variant.stock) || 0,
-          images: parseImageUrls(variant.images),
-        })),
+              .filter((variant) => variant.colorName.trim() || variant.images.trim() || variant.sizeOptions.some((s) => s.size || s.stock !== ""))
+              .flatMap((variant) =>
+                variant.sizeOptions
+                  .filter((opt) => opt.size.trim() || opt.stock !== "")
+                  .map((opt) => ({
+                    colorName: variant.colorName,
+                    colorHex: variant.colorHex,
+                    size: opt.size || "Standard",
+                    stock: Number(opt.stock) || 0,
+                    images: parseImageUrls(variant.images),
+                  })),
+              ),
       isActive: form.isActive,
     };
 
@@ -365,28 +387,52 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                         onChange={(event) => updateVariant(index, "colorHex", event.currentTarget.value)}
                       />
                     </label>
-                    <label className="product-field">
-                      <span>المقاس</span>
-                      <select
-                        value={variant.size}
-                        onChange={(event) => updateVariant(index, "size", event.currentTarget.value)}
-                      >
-                        <option value="Standard">Standard</option>
-                        <option value="S">S</option>
-                        <option value="M">M</option>
-                        <option value="L">L</option>
-                      </select>
-                    </label>
-                    <label className="product-field">
-                      <span>المخزون</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="1000000"
-                        step="1"
-                        value={variant.stock}
-                        onChange={(event) => updateVariant(index, "stock", event.currentTarget.value)}
-                      />
+                                        <label className="product-field product-field-wide" style={{ gridColumn: "1 / -1" }}>
+                      <span>المقاسات والمخزون لهذا اللون</span>
+                      <div className="variant-size-options" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "10px", border: "1px solid #e5e7eb", borderRadius: "8px", background: "#fafafa" }}>
+                        {variant.sizeOptions.map((opt, oIndex) => (
+                          <div key={oIndex} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            <select
+                              value={opt.size}
+                              onChange={(e) => updateSizeOption(index, oIndex, "size", e.currentTarget.value)}
+                              style={{ flex: "1 1 auto", padding: "6px", fontSize: "13px" }}
+                            >
+                              <option value="Standard">Standard</option>
+                              <option value="S">S</option>
+                              <option value="M">M</option>
+                              <option value="L">L</option>
+                            </select>
+                            <input
+                              type="number"
+                              min="0"
+                              max="1000000"
+                              step="1"
+                              value={opt.stock}
+                              onChange={(e) => updateSizeOption(index, oIndex, "stock", e.currentTarget.value)}
+                              placeholder="المخزون"
+                              style={{ width: "90px", padding: "6px", fontSize: "13px" }}
+                            />
+                            <button
+                              type="button"
+                              className="product-delete-button"
+                              onClick={() => updateVariant(index, "sizeOptions", variant.sizeOptions.filter((_, i) => i !== oIndex) as SizeForm[])}
+                              disabled={isPending || isUploading}
+                              aria-label="إزالة المقاس"
+                            >
+                              إزالة
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => updateVariant(index, "sizeOptions", [...variant.sizeOptions, { size: "Standard", stock: "0" }])}
+                          disabled={isPending || isUploading || variant.sizeOptions.length >= 6}
+                          style={{ alignSelf: "flex-start", padding: "6px 12px", fontSize: "12px" }}
+                        >
+                          + إضافة مقاس
+                        </button>
+                        <small>يُمكنك تحديد مقاسات متعددة لكل لون مع كمية منفصلة لكل مقاس (مثلاً: M بـ 5 قطع، L بـ 0 إذا غير متوفر).</small>
+                      </div>
                     </label>
                     <label className="product-field product-field-wide">
                       <span>صور هذا اللون</span>
