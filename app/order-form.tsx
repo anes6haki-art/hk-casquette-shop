@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
 import {
   DELIVERY_LABELS,
@@ -41,9 +41,7 @@ type OrderConfirmation = {
   deliveryType: DeliveryType;
   shippingFee: number;
   totalPrice: number;
-  color: string;
-  size: string;
-  quantity: number;
+  items: { productId: string; color: string; size: string; quantity: number }[];
 };
 
 export default function OrderForm({
@@ -59,6 +57,22 @@ export default function OrderForm({
   const selectedColor = selectedVariant?.colorName ?? "Standard";
   const selectedColorStock = selectedVariant?.stock ?? 0;
   const selectedVariantId = selectedVariant?.id;
+    const [packSize, setPackSize] = useState(1);
+    const [packItems, setPackItems] = useState<{ color: string; size: string }[]>(
+      selectedVariant ? [{ color: selectedVariant.colorName || "Standard", size: "Standard" }] : []
+    );
+  
+    useEffect(() => {
+      if (packSize > packItems.length) {
+        const newItems = Array.from({ length: packSize - packItems.length }, () => ({
+          color: packItems[0]?.color || selectedVariant?.colorName || "Standard",
+          size: "Standard",
+        }));
+        setPackItems([...packItems, ...newItems]);
+      } else if (packSize < packItems.length) {
+        setPackItems(packItems.slice(0, packSize));
+      }
+    }, [packSize]);
   const [selectedSize, setSelectedSize] = useState<(typeof AVAILABLE_SIZES)[number]>("Standard");
   const [quantity, setQuantity] = useState(1);
   const [selectedWilayaCode, setSelectedWilayaCode] = useState("");
@@ -73,10 +87,26 @@ export default function OrderForm({
   const shippingFee = selectedShippingRate
     ? deliveryType === "HOME" ? selectedShippingRate.homePrice : selectedShippingRate.deskPrice
     : SHIPPING_FEE;
-  const subtotal = product.discountedPrice * quantity;
-  const total = subtotal + shippingFee;
-  const maxQuantity = Math.max(1, Math.min(10, selectedColorStock));
+    // Calculate subtotal based on pack items
+    const packSubtotal = product.discountedPrice * packItems.length;
+    const total = packSubtotal + shippingFee;
+    // Initialize pack items when selected variant or pack size changes
+  const packColors = product.variants.map((v) => v.colorName);
+  const hasMultipleVariants = product.variants.length > 1;
+  
+  // Get stock info for a pack item
+  function getColorStock(color: string) {
+    const variant = product.variants.find((v) => v.colorName === color);
+    return variant?.stock ?? 0;
+  }
+  
+  const maxPackQuantity = Math.max(1, Math.min(10, Math.min(...packItems.map((it) => getColorStock(it.color)))));
+  
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
+
+  function updatePackItem(index: number, field: 'color' | 'size', value: string) {
+    setPackItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  }
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
     const code = normalizeWilayaCode(event.currentTarget.value);
@@ -89,18 +119,17 @@ export default function OrderForm({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const formPhone = String(formData.get("phone") ?? "");
-    const nextOrder = {
+        const nextOrder = {
       name: String(formData.get("name") ?? ""),
       phone: formPhone,
       wilaya,
       commune: String(formData.get("commune") ?? ""),
-      items: [{
+      items: packItems.map((item) => ({
         productId: product.id,
-        ...(selectedVariantId ? { variantId: selectedVariantId } : {}),
-        color: selectedColor,
-        size: selectedSize,
-        quantity,
-      }],
+        color: item.color,
+        size: item.size,
+        quantity: 1,
+      })),
       productId: product.id,
       deliveryType,
     };
@@ -109,7 +138,7 @@ export default function OrderForm({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
-      setOrder({
+            setOrder({
         name: nextOrder.name,
         phone: formPhone,
         wilaya,
@@ -117,9 +146,7 @@ export default function OrderForm({
         deliveryType,
         shippingFee: savedOrder.shippingFee,
         totalPrice: savedOrder.totalPrice,
-        color: selectedColor,
-        size: selectedSize,
-        quantity,
+        items: packItems.map((it) => ({ productId: product.id, color: it.color, size: it.size, quantity: 1 })),
       });
     } catch (error) {
       setSubmissionError(
@@ -135,41 +162,90 @@ export default function OrderForm({
   return (
     <>
       <form className="order-card product-direct-form" dir="rtl" onSubmit={handleSubmit}>
-        <div className="product-direct-options">
-          <div className="order-option-group">
-            <span>المقاس</span>
-            <div className="order-size-options">
-                            {AVAILABLE_SIZES.map((size) => (
+                <div className="product-direct-options">
+          <div className="order-option-group pack-size-selector">
+            <span>المجموعة</span>
+            <div className="pack-size-options">
+              {[1, 2, 3].map((n) => (
                 <button
-                  className={`order-size-option${selectedSize === size ? " is-selected" : ""}${selectedColorStock === 0 ? " is-disabled" : ""}`}
-                  key={size}
+                  key={n}
                   type="button"
-                  onClick={() => selectedColorStock !== 0 && setSelectedSize(size)}
-                  aria-pressed={selectedSize === size}
-                  disabled={selectedColorStock === 0}
+                  className={`pack-size-option${packSize === n ? " is-selected" : ""}`}
+                  onClick={() => setPackSize(n)}
+                  aria-pressed={packSize === n}
                 >
-                  {size}
+                  {n} قطعة{n > 1 && ` (خصم pack ${n})`}
                 </button>
               ))}
             </div>
           </div>
-          <div className="order-option-group product-direct-quantity">
-            <span>الكمية</span>
-            <div className="quantity-control" aria-label={`Quantité pour ${selectedColor} ${selectedSize}`}>
+
+          <div className="pack-item-customizers">
+            {packItems.map((item, idx) => (
+              <div key={idx} className="pack-item-editor">
+                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#1a1a1a" }}>
+                  القبعة رقم {idx + 1}
+                </h4>
+                <div className="product-form-grid" style={{ gap: "10px" }}>
+                  <label className="product-field">
+                    <span>اللون</span>
+                    <select
+                      value={item.color}
+                      onChange={(e) => updatePackItem(idx, "color", e.currentTarget.value)}
+                      style={{ width: "100%", padding: "6px", fontSize: "13px" }}
+                    >
+                      {packColors.map((color) => (
+                        <option key={color} value={color}>
+                          {color}
+                        </option>
+                      ))}
+                    </select>
+                    <small>{getColorStock(item.color)} قطعة متوفرة</small>
+                  </label>
+                  <label className="product-field">
+                    <span>المقاس</span>
+                    <select
+                      value={item.size}
+                      onChange={(e) => updatePackItem(idx, "size", e.currentTarget.value)}
+                      style={{ width: "100%", padding: "6px", fontSize: "13px" }}
+                    >
+                      {AVAILABLE_SIZES.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {idx > 0 && (
+                  <button
+                    type="button"
+                    className="product-delete-button"
+                    style={{ alignSelf: "flex-end", marginTop: "8px" }}
+                    onClick={() => {
+                      setPackSize(packSize - 1);
+                      setPackItems(packItems.filter((_, i) => i !== idx));
+                    }}
+                  >
+                    إزالة القبععة
+                  </button>
+                )}
+              </div>
+            ))}
+            {packItems.length < 3 && (
               <button
                 type="button"
-                onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                aria-label="تقليل الكمية"
-                disabled={quantity <= 1}
-              >−</button>
-              <output aria-live="polite">{quantity}</output>
-              <button
-                type="button"
-                onClick={() => setQuantity((current) => Math.min(maxQuantity, current + 1))}
-                aria-label="زيادة الكمية"
-                disabled={quantity >= maxQuantity || selectedColorStock < 1}
-              >+</button>
-            </div>
+                onClick={() => {
+                  const newColor = packItems.length > 0 ? packItems[0].color : product.variants[0]?.colorName || "Standard";
+                  setPackSize(packSize + 1);
+                  setPackItems([...packItems, { color: newColor, size: "Standard" }]);
+                }}
+                disabled={packSize >= 3}
+                style={{ alignSelf: "flex-start", padding: "6px 14px", fontSize: "13px" }}
+              >
+                + إضافة قطعة إلى المجموعة
+              </button>
+            )}
           </div>
         </div>
 
@@ -235,25 +311,30 @@ export default function OrderForm({
           </select>
         </label>
 
-        <div className="price-breakdown" aria-live="polite">
+                <div className="price-breakdown" aria-live="polite">
           <div className="order-line-summary">
-            <span>{quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(selectedColor)} · {selectedSize}</span>
-            <span>{formatPrice(subtotal)}</span>
+            <span>{packSize} × {getProductTitleAr(product.title)} · مجموعة</span>
+            <span>{formatPrice(packSubtotal)}</span>
           </div>
+          {packItems.map((item, idx) => (
+            <div key={idx} className="pack-item-price" style={{ fontSize: "13px", color: "#555" }}>
+              <span>· {getColorLabelAr(item.color)} · {item.size}</span>
+            </div>
+          ))}
           <div>
             <span>التوصيل · {DELIVERY_LABELS[deliveryType]}</span>
             <span>{selectedShippingRate ? formatPrice(shippingFee) : "اختاروا الولاية"}</span>
           </div>
-          <div className="price-total"><strong>المبلغ الإجمالي</strong><strong>{formatPrice(selectedShippingRate ? total : subtotal)}</strong></div>
+          <div className="price-total"><strong>المبلغ الإجمالي</strong><strong>{formatPrice(selectedShippingRate ? total : packSubtotal)}</strong></div>
         </div>
 
-        {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
+                {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
         <button
           className="submit-button"
           type="submit"
-          disabled={isSubmitting || !selectedShippingRate || selectedColorStock < 1 || quantity > selectedColorStock}
+          disabled={isSubmitting || !selectedShippingRate || packItems.some((item) => getColorStock(item.color) < 1)}
         >
-          {selectedColorStock < 1 ? "نفدت الكمية" : isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
+          {isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
         </button>
         <p className="form-note"><span aria-hidden="true">✓</span> لا يوجد دفع إلكتروني. الدفع عند الاستلام.</p>
       </form>
@@ -276,8 +357,8 @@ export default function OrderForm({
             <div className="summary-box">
               <div className="summary-items">
                 <span>المنتجات</span>
-                <strong>
-                  {order.quantity} × {getProductTitleAr(product.title)} · {getColorLabelAr(order.color)} · {order.size}
+                                <strong>
+                  {packSize} × {getProductTitleAr(product.title)} · مجموعة
                 </strong>
               </div>
               <div><span>التوصيل</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {order.commune}، {getWilayaLabelAr(order.wilaya)}</strong></div>
