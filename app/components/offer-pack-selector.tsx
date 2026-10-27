@@ -58,10 +58,15 @@ export default function OfferPackSelector({
             aria-checked={packSize === n}
             role="radio"
           >
-            <span className="pack-card-label">{label}</span>
-            <span className="pack-card-sub">{sub}</span>
-            <span className="pack-card-price">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
-            {highlight && n > 1 && <span className="pack-card-badge">وفر</span>}
+            <div className="pack-card-inner" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px 20px', border: '1px solid #333', borderRadius: '12px', background: '#18181b', color: '#fff', minHeight: '80px', transition: 'all 0.2s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
+              <span className="pack-card-number" style={{ fontSize: '22px', fontWeight: 700, color: '#f59e0b', minWidth: '36px', textAlign: 'center' }}>#{n}</span>
+              <div className="pack-card-content" style={{ flex: 1 }}>
+                <span className="pack-card-label" style={{ display: 'block', fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{label}</span>
+                <span className="pack-card-sub" style={{ display: 'block', fontSize: '13px', color: '#a1a1aa', marginBottom: '6px' }}>{sub}</span>
+                <span className="pack-card-price" style={{ display: 'block', fontSize: '18px', fontWeight: 700, color: '#22c55e' }}>{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
+                {highlight && n > 1 && <span className="pack-card-badge" style={{ display: 'inline-block', marginTop: '6px', padding: '2px 8px', background: '#f59e0b', color: '#18181b', fontSize: '11px', fontWeight: 700, borderRadius: '6px' }}>وفر</span>}
+              </div>
+            </div>
           </button>
         ))}
       </div>
