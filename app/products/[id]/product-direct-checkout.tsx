@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import OrderForm from "@/app/order-form";
+import OfferPackSelector from "@/app/components/offer-pack-selector";
 import { getProductDescriptionAr, getProductTitleAr, type ProductDto, type ShippingRateDto } from "@/lib/store-data";
 import ProductGallery from "./product-gallery";
 
@@ -17,6 +18,8 @@ export default function ProductDirectCheckout({
   shippingRates: ShippingRateDto[];
 }) {
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [packSize, setPackSize] = useState(1);
+  const [packItems, setPackItems] = useState([]);
   const discount = product.originalPrice > product.discountedPrice
     ? Math.round((1 - product.discountedPrice / product.originalPrice) * 100)
     : 0;
@@ -51,17 +54,8 @@ export default function ProductDirectCheckout({
           </span>
           <span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h8M8 14h4" /><path d="m16 15 1.5 1.5L20 14" /></svg>
-import OfferPackSelector from "@/app/components/offer-pack-selector";
-
             الدفع عند الاستلام
           </span>
-        <OfferPackSelector
-          product={product}
-          packSize={packSize} // Ensure that you pass the required props correctly
-          setPackSize={setPackSize}
-          packItems={packItems}
-          setPackItems={setPackItems}
-        />
         </div>
         <OrderForm
           product={product}
