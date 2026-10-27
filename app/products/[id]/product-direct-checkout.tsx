@@ -51,8 +51,17 @@ export default function ProductDirectCheckout({
           </span>
           <span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM8 10h8M8 14h4" /><path d="m16 15 1.5 1.5L20 14" /></svg>
+import OfferPackSelector from "@/app/components/offer-pack-selector";
+
             الدفع عند الاستلام
           </span>
+        <OfferPackSelector
+          product={product}
+          packSize={packSize} // Ensure that you pass the required props correctly
+          setPackSize={setPackSize}
+          packItems={packItems}
+          setPackItems={setPackItems}
+        />
         </div>
         <OrderForm
           product={product}
