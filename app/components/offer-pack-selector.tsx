@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { getColorLabelAr, getProductTitleAr, type ProductDto } from "@/lib/store-data";
-import { AVAILABLE_SIZES } from "@/app/order-form";
 
-// Re-export size constant for reuse
-export { AVAILABLE_SIZES } from "@/app/order-form";
+const AVAILABLE_SIZES: string[] = ["Standard", "S", "M", "L"];
 
 export default function OfferPackSelector({
   product,
@@ -35,7 +33,7 @@ export default function OfferPackSelector({
     }
   }, [packSize]);
 
-  function updateItem(index: number, field: "color" | "size", value: string) {
+  function updateItem(index: number, field: "color" | "size", value: string): void {
     setPackItems(packItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   }
 
