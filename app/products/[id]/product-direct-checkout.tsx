@@ -19,7 +19,7 @@ export default function ProductDirectCheckout({
 }) {
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [packSize, setPackSize] = useState(1);
-  const [packItems, setPackItems] = useState([]);
+  const [packItems, setPackItems] = useState<{ color: string; size: string }[]>([]);
   const discount = product.originalPrice > product.discountedPrice
     ? Math.round((1 - product.discountedPrice / product.originalPrice) * 100)
     : 0;

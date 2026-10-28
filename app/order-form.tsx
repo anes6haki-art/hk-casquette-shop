@@ -328,10 +328,10 @@ export default function OrderForm({
             <span>{packSize} × {getProductTitleAr(product.title)} · مجموعة</span>
             <span>{formatPrice(packSubtotal)}</span>
           </div>
-          {packItems.map((item, idx) => (
-            <div key={idx} className="pack-item-price" style={{ fontSize: "13px", color: "#555" }}>
-              <span>· {getColorLabelAr(item.color)} · {item.size}</span>
-            </div>
+          {packItems.map(({ color, size }, idx) => (
+          <div key={idx} className="pack-item-price" style={{ fontSize: "13px", color: "#555" }}>
+          <span>· {getColorLabelAr(color)} · {size}</span>
+          </div>
           ))}
           <div>
             <span>التوصيل · {DELIVERY_LABELS[deliveryType]}</span>
