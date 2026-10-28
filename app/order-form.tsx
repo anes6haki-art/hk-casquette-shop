@@ -116,8 +116,12 @@ export default function OrderForm({
   
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
-  function updatePackItem(index: number, field: 'color' | 'size', value: string) {
-    setPackItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  function updatePackItem(index: number, field: 'color' | 'size', value: string): void {
+      setPackItems((prev: { color: string; size: string }[]) =>
+        prev.map((item: { color: string; size: string }, i: number) =>
+          i === index ? { ...item, [field]: value } : item
+        )
+      );
   }
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
