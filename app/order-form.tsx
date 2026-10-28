@@ -48,19 +48,31 @@ export default function OrderForm({
   product,
   shippingRates,
   selectedVariantIndex = 0,
+  packSize: externalPackSize,
+  setPackSize: externalSetPackSize,
+  packItems: externalPackItems,
+  setPackItems: externalSetPackItems,
 }: {
   product: ProductDto;
   shippingRates: ShippingRateDto[];
   selectedVariantIndex?: number;
+  packSize?: number;
+  setPackSize?: (n: number) => void;
+  packItems?: { color: string; size: string }[];
+  setPackItems?: (items: { color: string; size: string }[]) => void;
 }) {
     const selectedVariant = product.variants[selectedVariantIndex];
   const selectedColor = selectedVariant?.colorName ?? "Standard";
   const selectedColorStock = selectedVariant?.stock ?? 0;
   const selectedVariantId = selectedVariant?.id;
-    const [packSize, setPackSize] = useState(1);
-    const [packItems, setPackItems] = useState<{ color: string; size: string }[]>(
+    const [internalPackSize, setInternalPackSize] = useState(1);
+    const [internalPackItems, setInternalPackItems] = useState<{ color: string; size: string }[]>(
       selectedVariant ? [{ color: selectedVariant.colorName || "Standard", size: "Standard" }] : []
     );
+    const packSize = externalPackSize ?? internalPackSize;
+    const setPackSize = externalSetPackSize ?? setInternalPackSize;
+    const packItems = externalPackItems ?? internalPackItems;
+    const setPackItems = externalSetPackItems ?? setInternalPackItems;
   
     useEffect(() => {
       if (packSize > packItems.length) {

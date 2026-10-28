@@ -50,24 +50,78 @@ export default function OfferPackSelector({
       
       <div className="pack-cards" role="radiogroup" aria-label="اختيار الباقة">
         {prices.map(({ n, label, sub, price, highlight }) => (
-          <button
-            key={n}
-            type="button"
-            className={`pack-card${packSize === n ? " is-selected" : ""}${highlight ? " is-highlight" : ""}`}
+            <div
+            role="radio"
+            tabIndex={0}
             onClick={() => setPackSize(n)}
             aria-checked={packSize === n}
-            role="radio"
-          >
-            <div className="pack-card-inner" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '18px 20px', border: '1px solid #333', borderRadius: '12px', background: '#18181b', color: '#fff', minHeight: '80px', transition: 'all 0.2s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
-              <span className="pack-card-number" style={{ fontSize: '22px', fontWeight: 700, color: '#f59e0b', minWidth: '36px', textAlign: 'center' }}>#{n}</span>
-              <div className="pack-card-content" style={{ flex: 1 }}>
-                <span className="pack-card-label" style={{ display: 'block', fontSize: '16px', fontWeight: 600, marginBottom: '4px' }}>{label}</span>
-                <span className="pack-card-sub" style={{ display: 'block', fontSize: '13px', color: '#a1a1aa', marginBottom: '6px' }}>{sub}</span>
-                <span className="pack-card-price" style={{ display: 'block', fontSize: '18px', fontWeight: 700, color: '#22c55e' }}>{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
-                {highlight && n > 1 && <span className="pack-card-badge" style={{ display: 'inline-block', marginTop: '6px', padding: '2px 8px', background: '#f59e0b', color: '#18181b', fontSize: '11px', fontWeight: 700, borderRadius: '6px' }}>وفر</span>}
-              </div>
+            className={`
+            pack-card
+            flex
+            flex-col
+            items-center
+            gap-2
+            rounded-xl
+            border
+            border-gray-600
+            bg-white
+            transition-all
+            duration-200
+            group
+            peer
+            cursor-pointer
+            min-w-[120px]
+            min-h-[120px]
+            ${packSize === n ? "border-amber-600 bg-amber-50" : ""}
+            `}
+            >
+            <div
+            className={`
+            h-8
+            w-8
+            rounded-full
+            border-2
+            border-gray-600
+            bg-white
+            flex
+            items-center
+            justify-center
+            peer-checked:border-amber-600
+            peer-checked:bg-amber-100
+            peer-checked:text-amber-600
+            transition-colors
+            duration-200
+            `}
+            >
+            <svg
+            className={`
+            h-4
+            w-4
+            peer-checked:fill-amber-600
+            fill-gray-500
+            transition-fill
+            duration-200
+            `}
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            >
+            <path
+            d="M5 3h14c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2m4 12h6v2h-6v-2zm-6-6h6v6H5v-6zm11.46-1.9 1.41 1.41-1.06 1.06L17.24 11H9.39l-1.06 1.06L15.66 13.09l1.41 1.41L20 16.59z"
+            />
+            </svg>
             </div>
-          </button>
+            <div className="pack-card-content flex-1 text-center py-3">
+            <span className="pack-card-number text-xl font-bold text-amber-600">#{n}</span>
+            <div>
+            <span className="pack-card-label font-medium text-sm block">{label}</span>
+            <span className="pack-card-sub text-xs text-gray-400 block">{sub}</span>
+            </div>
+            <span className="pack-card-price font-bold text-lg text-emerald-600">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
+            {highlight && n > 1 && (
+            <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold text-amber-800 bg-amber-100 rounded-full">وفر</span>
+            )}
+            </div>
+            </div>
         ))}
       </div>
 

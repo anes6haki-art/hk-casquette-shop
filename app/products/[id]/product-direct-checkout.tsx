@@ -57,10 +57,21 @@ export default function ProductDirectCheckout({
             الدفع عند الاستلام
           </span>
         </div>
+        <OfferPackSelector
+          product={product}
+          packSize={packSize}
+          setPackSize={setPackSize}
+          packItems={packItems}
+          setPackItems={setPackItems}
+        />
         <OrderForm
           product={product}
           shippingRates={shippingRates}
           selectedVariantIndex={selectedVariantIndex}
+          packSize={packSize}
+          setPackSize={setPackSize}
+          packItems={packItems}
+          setPackItems={setPackItems}
         />
         
         <a 
