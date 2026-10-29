@@ -41,7 +41,7 @@ type OrderConfirmation = {
   deliveryType: DeliveryType;
   shippingFee: number;
   totalPrice: number;
-  items: { productId: string; color: string; size: string; quantity: number }[];
+  items: { productId: string; color: string; size: string; quantity: number; variantId?: string }[];
 };
 
 export default function OrderForm({
@@ -116,12 +116,11 @@ export default function OrderForm({
   
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
-  function updatePackItem(index: number, field: 'color' | 'size', value: string): void {
-      setPackItems((prev: { color: string; size: string }[]) =>
-        prev.map((item: { color: string; size: string }, i: number) =>
-          i === index ? { ...item, [field]: value } : item
-        )
-      );
+    function updatePackItem(index: number, field: 'color' | 'size', value: string): void {
+    const updated: { color: string; size: string }[] = (packItems || []).map((item: { color: string; size: string }, i: number) =>
+      i === index ? { ...item, [field]: value } : item
+    );
+    setPackItems(updated);
   }
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -140,12 +139,16 @@ export default function OrderForm({
       phone: formPhone,
       wilaya,
       commune: String(formData.get("commune") ?? ""),
-      items: packItems.map((item) => ({
-        productId: product.id,
-        color: item.color,
-        size: item.size,
-        quantity: 1,
-      })),
+            items: packItems.map((item) => {
+        const variant = product.variants.find(v => v.colorName === item.color);
+        return {
+          productId: product.id,
+          color: item.color,
+          size: item.size,
+          quantity: 1,
+          variantId: variant?.id ?? '',
+        };
+      }),
       productId: product.id,
       deliveryType,
     };
@@ -162,7 +165,10 @@ export default function OrderForm({
         deliveryType,
         shippingFee: savedOrder.shippingFee,
         totalPrice: savedOrder.totalPrice,
-        items: packItems.map((it) => ({ productId: product.id, color: it.color, size: it.size, quantity: 1 })),
+        items: packItems.map((it) => {
+          const variant = product.variants.find(v => v.colorName === it.color);
+          return { productId: product.id, color: it.color, size: it.size, quantity: 1, variantId: variant?.id ?? '' };
+        }),
       });
     } catch (error) {
       setSubmissionError(
