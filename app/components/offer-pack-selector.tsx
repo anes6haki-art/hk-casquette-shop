@@ -58,39 +58,42 @@ export default function OfferPackSelector({
             className={`
             pack-card
             flex
-            flex-col
+            flex-row
             items-center
-            gap-2
-            rounded-xl
+            gap-1
+            rounded-lg
             border
-            border-gray-600
+            border-red-500
             bg-white
             transition-all
-            duration-200
+            duration-150
             group
             peer
             cursor-pointer
-            min-w-[120px]
-            min-h-[120px]
-            ${packSize === n ? "border-amber-600 bg-amber-50" : ""}
+            min-w-[80px]
+            min-h-[60px]
+            px-2
+            py-2
+            text-xs
+            ${packSize === n ? "border-red-600 bg-red-50" : ""}
             `}
             >
             <div
             className={`
-            h-8
-            w-8
+            h-6
+            w-6
             rounded-full
             border-2
-            border-gray-600
+            border-red-400
             bg-white
             flex
             items-center
             justify-center
-            peer-checked:border-amber-600
-            peer-checked:bg-amber-100
-            peer-checked:text-amber-600
+            peer-checked:border-red-600
+            peer-checked:bg-red-100
+            peer-checked:text-red-600
             transition-colors
-            duration-200
+            duration-150
             `}
             >
             <svg
@@ -112,19 +115,13 @@ export default function OfferPackSelector({
             </div>
             <div className="pack-card-content flex-1 text-center py-3">
             <span className="pack-card-number text-xl font-bold text-amber-600">#{n}</span>
-            <div>
+            <span className="pack-card-sub text-xs text-gray-400 block">{sub}</span>
             <span className="pack-card-label font-medium text-sm block">{label}</span>
             <span className="pack-card-sub text-xs text-gray-400 block">{sub}</span>
-            </div>
-            <span className="pack-card-price font-bold text-lg text-emerald-600">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
-            {highlight && n > 1 && (
-            <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold text-amber-800 bg-amber-100 rounded-full">وفر</span>
             )}
-            </div>
-            </div>
+            <span className="pack-card-price font-bold text-lg text-emerald-600">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
         ))}
-      </div>
-
+            <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold text-amber-800 bg-amber-100 rounded-full">وفر</span>
       {packSize > 1 && (
         <div className="pack-customizers">
           <h3>تخصيص كل قطعة في الباقة</h3>
