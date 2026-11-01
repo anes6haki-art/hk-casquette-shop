@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
-import { getColorLabelAr, getProductTitleAr, type ProductDto } from "@/lib/store-data";
+"use client";
 
-const AVAILABLE_SIZES: string[] = ["Standard", "S", "M", "L"];
+import { getColorLabelAr, type ProductDto } from "@/lib/store-data";
+
+const AVAILABLE_SIZES = ["Standard", "S", "M", "L"] as const;
+
+type PackItem = { color: string; size: string };
 
 export default function OfferPackSelector({
   product,
@@ -13,157 +16,157 @@ export default function OfferPackSelector({
   product: ProductDto;
   packSize: number;
   setPackSize: (n: number) => void;
-  packItems: { color: string; size: string }[];
-  setPackItems: (items: { color: string; size: string }[]) => void;
+  packItems: PackItem[];
+  setPackItems: (items: PackItem[]) => void;
 }) {
-  const packColors = product.variants.map((v) => v.colorName);
-  const hasMultipleVariants = product.variants.length > 1;
-
-  function getColorStock(color: string) {
-    const variant = product.variants.find((v) => v.colorName === color);
-    return variant?.stock ?? 0;
-  }
-
-  useEffect(() => {
-    if (packSize > packItems.length) {
-      const newColor = packItems[0]?.color || product.variants[0]?.colorName || "Standard";
-      setPackItems([...packItems, ...Array.from({ length: packSize - packItems.length }, () => ({ color: newColor, size: "Standard" }))]);
-    } else if (packSize < packItems.length) {
-      setPackItems(packItems.slice(0, packSize));
-    }
-  }, [packSize]);
-
-  function updateItem(index: number, field: "color" | "size", value: string): void {
-    setPackItems(packItems.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
-  }
-
-  const prices = [
-    { n: 1, label: "قطعة واحدة", sub: "السعر العادي", price: product.discountedPrice, highlight: false },
-    { n: 2, label: "باقات 2 قطع", sub: "خصم خاص", price: Math.round(product.discountedPrice * 1.8), highlight: true },
-    { n: 3, label: "باقات 3 قطع", sub: "خصم خاص", price: Math.round(product.discountedPrice * 2.6), highlight: true },
+  const colorOptions = product.variants.length > 0
+    ? product.variants.map((variant) => ({
+        color: variant.colorName,
+        colorHex: variant.colorHex,
+        stock: variant.stock,
+      }))
+    : [{ color: "Standard", colorHex: "#d4d4d8", stock: product.stockQuantity }];
+  const offers = [
+    { count: 1, title: "قطعة واحدة", subtitle: "السعر العادي", multiplier: 1 },
+    { count: 2, title: "باقتان · قطعتان", subtitle: "عرض خاص", multiplier: 1.8 },
+    { count: 3, title: "ثلاث قطع", subtitle: "أفضل قيمة", multiplier: 2.6 },
   ];
+
+  function selectPack(count: number) {
+    const defaultColor = packItems[0]?.color ?? colorOptions[0].color;
+    setPackItems(
+      Array.from({ length: count }, (_, index) =>
+        packItems[index] ?? { color: defaultColor, size: "Standard" },
+      ),
+    );
+    setPackSize(count);
+  }
+
+  function updateItem(index: number, field: keyof PackItem, value: string) {
+    setPackItems(packItems.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item,
+    ));
+  }
 
   return (
     <section className="offer-packs-section" aria-labelledby="offer-packs-title">
-      <h2 id="offer-packs-title">اختر الباقة</h2>
-      <p className="offer-packs-sub">اختر عدد القطع التي تريدها، ثم خصص كل قبعة على حدة.</p>
-      
-      <div className="pack-cards" role="radiogroup" aria-label="اختيار الباقة">
-        {prices.map(({ n, label, sub, price, highlight }) => (
-            <div
-            role="radio"
-            tabIndex={0}
-            onClick={() => setPackSize(n)}
-            aria-checked={packSize === n}
-            className={`
-            pack-card
-            flex
-            flex-row
-            items-center
-            gap-1
-            rounded-lg
-            border
-            border-red-500
-            bg-white
-            transition-all
-            duration-150
-            group
-            peer
-            cursor-pointer
-            min-w-[80px]
-            min-h-[60px]
-            px-2
-            py-2
-            text-xs
-            ${packSize === n ? "border-red-600 bg-red-50" : ""}
-            `}
-            >
-            <div
-            className={`
-            h-6
-            w-6
-            rounded-full
-            border-2
-            border-red-400
-            bg-white
-            flex
-            items-center
-            justify-center
-            peer-checked:border-red-600
-            peer-checked:bg-red-100
-            peer-checked:text-red-600
-            transition-colors
-            duration-150
-            `}
-            >
-            <svg
-            className={`
-            h-4
-            w-4
-            peer-checked:fill-amber-600
-            fill-gray-500
-            transition-fill
-            duration-200
-            `}
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            >
-            <path
-            d="M5 3h14c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2m4 12h6v2h-6v-2zm-6-6h6v6H5v-6zm11.46-1.9 1.41 1.41-1.06 1.06L17.24 11H9.39l-1.06 1.06L15.66 13.09l1.41 1.41L20 16.59z"
-            />
-            </svg>
-            </div>
-            <div className="pack-card-content flex-1 text-center py-1">
-              <span className="pack-card-number text-sm font-bold text-red-600">#{n}</span>
-              <div>
-                <span className="pack-card-label font-semibold text-xs block leading-tight">{label}</span>
-                <span className="pack-card-sub text-[10px] text-gray-400 block leading-tight">{sub}</span>
-              </div>
-              <span className="pack-card-price font-bold text-sm text-red-600">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
-              {highlight && n > 1 && (
-                <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-semibold text-red-800 bg-red-100 rounded-full">وفر</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      {packSize > 1 && (
-        <div className="pack-customizers">
-          <h3>تخصيص كل قطعة في الباقة</h3>
-          <div className="pack-items-grid">
-            {packItems.map((item, idx) => (
-              <div key={idx} className="pack-item-card">
-                <span className="pack-item-number">قبعة {idx + 1}</span>
-                <label>
-                  <span>اللون</span>
-                  <select
-                    value={item.color}
-                    onChange={(e) => updateItem(idx, "color", e.currentTarget.value)}
-                    aria-label={`اللون للقبعة ${idx + 1}`}
-                  >
-                    {packColors.map((color) => (
-                      <option key={color} value={color}>{getColorLabelAr(color) || color}</option>
-                    ))}
-                  </select>
-                  <small>{getColorStock(item.color)} قطعة متوفرة</small>
-                </label>
-                <label>
-                  <span>المقاس</span>
-                  <select
-                    value={item.size}
-                    onChange={(e) => updateItem(idx, "size", e.currentTarget.value)}
-                    aria-label={`المقاس للقبعة ${idx + 1}`}
-                  >
-                    {AVAILABLE_SIZES.map((size) => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            ))}
-          </div>
+      <div className="offer-packs-heading">
+        <div>
+          <h2 id="offer-packs-title">اختر الباقة</h2>
+          <p>اختر عدد القطع وخصص اللون والمقاس لكل قطعة.</p>
         </div>
-      )}
+        <span className="offer-packs-step" aria-hidden="true">01</span>
+      </div>
+
+      <div className="offer-pack-list">
+        {offers.map(({ count, title, subtitle, multiplier }) => {
+          const isSelected = packSize === count;
+          const price = Math.round(product.discountedPrice * multiplier);
+
+          return (
+            <article
+              className={`offer-pack-card${isSelected ? " is-selected" : ""}`}
+              key={count}
+            >
+              <button
+                type="button"
+                className="offer-pack-trigger"
+                onClick={() => selectPack(count)}
+                aria-expanded={isSelected}
+                aria-controls={`offer-pack-options-${count}`}
+              >
+                <span className="offer-pack-indicator" aria-hidden="true">
+                  {isSelected && <span />}
+                </span>
+                <span className="offer-pack-info">
+                  <span className="offer-pack-title">{title}</span>
+                  <span className="offer-pack-subtitle">{subtitle}</span>
+                </span>
+                <span className="offer-pack-price">
+                  <strong>{new Intl.NumberFormat("ar-DZ").format(price)} دج</strong>
+                  {count > 1 && (
+                    <span>وفر {new Intl.NumberFormat("ar-DZ").format(product.discountedPrice * count - price)} دج</span>
+                  )}
+                </span>
+                <span className="offer-pack-chevron" aria-hidden="true">⌄</span>
+              </button>
+
+              {isSelected && (
+                <div
+                  className="offer-pack-options"
+                  id={`offer-pack-options-${count}`}
+                  dir="rtl"
+                >
+                  {Array.from({ length: count }, (_, index) => {
+                    const item = packItems[index] ?? {
+                      color: colorOptions[0].color,
+                      size: "Standard",
+                    };
+                    const selectedColor = colorOptions.find((option) => option.color === item.color);
+
+                    return (
+                      <fieldset className="offer-pack-item" key={index}>
+                        <legend>القطعة {index + 1}</legend>
+                        <div className="offer-pack-option-group">
+                          <span className="offer-pack-option-label">اللون</span>
+                          <div className="offer-pack-color-options" role="group" aria-label={`اللون للقطعة ${index + 1}`}>
+                            {colorOptions.map((option) => {
+                              const isColorSelected = item.color === option.color;
+
+                              return (
+                                <button
+                                  className={`offer-pack-color-option${isColorSelected ? " is-selected border-red-500 ring-red-500" : ""}`}
+                                  key={option.color}
+                                  type="button"
+                                  onClick={() => updateItem(index, "color", option.color)}
+                                  disabled={option.stock < 1}
+                                  aria-label={`${getColorLabelAr(option.color)}${option.stock < 1 ? " · نفد المخزون" : ""}`}
+                                  aria-pressed={isColorSelected}
+                                >
+                                  <span
+                                    className="offer-pack-color-swatch"
+                                    style={{ backgroundColor: option.colorHex }}
+                                    aria-hidden="true"
+                                  />
+                                  <span>{getColorLabelAr(option.color)}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <span className="offer-pack-stock" aria-live="polite">
+                            {selectedColor?.stock ?? 0} قطعة متوفرة
+                          </span>
+                        </div>
+
+                        <div className="offer-pack-option-group">
+                          <span className="offer-pack-option-label">المقاس</span>
+                          <div className="offer-pack-size-options" role="group" aria-label={`المقاس للقطعة ${index + 1}`}>
+                            {AVAILABLE_SIZES.map((size) => {
+                              const isSizeSelected = item.size === size;
+
+                              return (
+                                <button
+                                  className={`offer-pack-size-option${isSizeSelected ? " is-selected border-red-500 ring-red-500" : ""}`}
+                                  key={size}
+                                  type="button"
+                                  onClick={() => updateItem(index, "size", size)}
+                                  aria-pressed={isSizeSelected}
+                                >
+                                  {size}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </fieldset>
+                    );
+                  })}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }

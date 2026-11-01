@@ -1,12 +1,11 @@
 
 "use client";
 
-import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
-  getColorLabelAr,
   getProductTitleAr,
   getWilayaLabelAr,
   SHIPPING_FEE,
@@ -15,8 +14,6 @@ import {
   type DeliveryType,
   type ShippingRateDto,
 } from "@/lib/store-data";
-
-const AVAILABLE_SIZES = ["Standard", "S", "M", "L"] as const;
 
 function formatPrice(amount: number) {
   return `${new Intl.NumberFormat("ar-DZ").format(amount)} دج`;
@@ -47,46 +44,14 @@ type OrderConfirmation = {
 export default function OrderForm({
   product,
   shippingRates,
-  selectedVariantIndex = 0,
-  packSize: externalPackSize,
-  setPackSize: externalSetPackSize,
-  packItems: externalPackItems,
-  setPackItems: externalSetPackItems,
+  packSize,
+  packItems,
 }: {
   product: ProductDto;
   shippingRates: ShippingRateDto[];
-  selectedVariantIndex?: number;
-  packSize?: number;
-  setPackSize?: (n: number) => void;
-  packItems?: { color: string; size: string }[];
-  setPackItems?: (items: { color: string; size: string }[]) => void;
+  packSize: number;
+  packItems: { color: string; size: string }[];
 }) {
-    const selectedVariant = product.variants[selectedVariantIndex];
-  const selectedColor = selectedVariant?.colorName ?? "Standard";
-  const selectedColorStock = selectedVariant?.stock ?? 0;
-  const selectedVariantId = selectedVariant?.id;
-    const [internalPackSize, setInternalPackSize] = useState(1);
-    const [internalPackItems, setInternalPackItems] = useState<{ color: string; size: string }[]>(
-      selectedVariant ? [{ color: selectedVariant.colorName || "Standard", size: "Standard" }] : []
-    );
-    const packSize = externalPackSize ?? internalPackSize;
-    const setPackSize = externalSetPackSize ?? setInternalPackSize;
-    const packItems = externalPackItems ?? internalPackItems;
-    const setPackItems = externalSetPackItems ?? setInternalPackItems;
-  
-    useEffect(() => {
-      if (packSize > packItems.length) {
-        const newItems = Array.from({ length: packSize - packItems.length }, () => ({
-          color: packItems[0]?.color || selectedVariant?.colorName || "Standard",
-          size: "Standard",
-        }));
-        setPackItems([...packItems, ...newItems]);
-      } else if (packSize < packItems.length) {
-        setPackItems(packItems.slice(0, packSize));
-      }
-    }, [packSize]);
-  const [selectedSize, setSelectedSize] = useState<(typeof AVAILABLE_SIZES)[number]>("Standard");
-  const [quantity, setQuantity] = useState(1);
   const [selectedWilayaCode, setSelectedWilayaCode] = useState("");
   const [commune, setCommune] = useState("");
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("HOME");
@@ -99,29 +64,15 @@ export default function OrderForm({
   const shippingFee = selectedShippingRate
     ? deliveryType === "HOME" ? selectedShippingRate.homePrice : selectedShippingRate.deskPrice
     : SHIPPING_FEE;
-    // Calculate subtotal based on pack items
-    const packSubtotal = product.discountedPrice * packItems.length;
-    const total = packSubtotal + shippingFee;
-    // Initialize pack items when selected variant or pack size changes
-  const packColors = product.variants.map((v) => v.colorName);
-  const hasMultipleVariants = product.variants.length > 1;
-  
-  // Get stock info for a pack item
+  const packSubtotal = product.discountedPrice * packItems.length;
+  const total = packSubtotal + shippingFee;
+
   function getColorStock(color: string) {
     const variant = product.variants.find((v) => v.colorName === color);
-    return variant?.stock ?? 0;
+    return variant?.stock ?? (product.variants.length === 0 ? product.stockQuantity : 0);
   }
-  
-  const maxPackQuantity = Math.max(1, Math.min(10, Math.min(...packItems.map((it) => getColorStock(it.color)))));
-  
-  const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
-    function updatePackItem(index: number, field: 'color' | 'size', value: string): void {
-    const updated: { color: string; size: string }[] = (packItems || []).map((item: { color: string; size: string }, i: number) =>
-      i === index ? { ...item, [field]: value } : item
-    );
-    setPackItems(updated);
-  }
+  const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
     const code = normalizeWilayaCode(event.currentTarget.value);
@@ -184,93 +135,6 @@ export default function OrderForm({
   return (
     <>
       <form className="order-card product-direct-form" dir="rtl" onSubmit={handleSubmit}>
-                <div className="product-direct-options">
-          <div className="order-option-group pack-size-selector">
-            <span>المجموعة</span>
-            <div className="pack-size-options">
-              {[1, 2, 3].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  className={`pack-size-option${packSize === n ? " is-selected" : ""}`}
-                  onClick={() => setPackSize(n)}
-                  aria-pressed={packSize === n}
-                >
-                  {n} قطعة{n > 1 && ` (خصم pack ${n})`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="pack-item-customizers">
-            {packItems.map((item, idx) => (
-              <div key={idx} className="pack-item-editor">
-                <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#1a1a1a" }}>
-                  القبعة رقم {idx + 1}
-                </h4>
-                <div className="product-form-grid" style={{ gap: "10px" }}>
-                  <label className="product-field">
-                    <span>اللون</span>
-                    <select
-                      value={item.color}
-                      onChange={(e) => updatePackItem(idx, "color", e.currentTarget.value)}
-                      style={{ width: "100%", padding: "6px", fontSize: "13px" }}
-                    >
-                      {packColors.map((color) => (
-                        <option key={color} value={color}>
-                          {color}
-                        </option>
-                      ))}
-                    </select>
-                    <small>{getColorStock(item.color)} قطعة متوفرة</small>
-                  </label>
-                  <label className="product-field">
-                    <span>المقاس</span>
-                    <select
-                      value={item.size}
-                      onChange={(e) => updatePackItem(idx, "size", e.currentTarget.value)}
-                      style={{ width: "100%", padding: "6px", fontSize: "13px" }}
-                    >
-                      {AVAILABLE_SIZES.map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                {idx > 0 && (
-                  <button
-                    type="button"
-                    className="product-delete-button"
-                    style={{ alignSelf: "flex-end", marginTop: "8px" }}
-                    onClick={() => {
-                      setPackSize(packSize - 1);
-                      setPackItems(packItems.filter((_, i) => i !== idx));
-                    }}
-                  >
-                    إزالة القبععة
-                  </button>
-                )}
-              </div>
-            ))}
-            {packItems.length < 3 && (
-              <button
-                type="button"
-                onClick={() => {
-                  const newColor = packItems.length > 0 ? packItems[0].color : product.variants[0]?.colorName || "Standard";
-                  setPackSize(packSize + 1);
-                  setPackItems([...packItems, { color: newColor, size: "Standard" }]);
-                }}
-                disabled={packSize >= 3}
-                style={{ alignSelf: "flex-start", padding: "6px 14px", fontSize: "13px" }}
-              >
-                + إضافة قطعة إلى المجموعة
-              </button>
-            )}
-          </div>
-        </div>
-
         <label className="field">
           <span>الاسم الكامل</span>
           <input name="name" type="text" placeholder="مثال: أمين بن علي" autoComplete="name" required minLength={3} />
@@ -334,16 +198,11 @@ export default function OrderForm({
         </label>
 
                 <div className="price-breakdown" aria-live="polite">
-          <div className="order-line-summary">
-            <span>{packSize} × {getProductTitleAr(product.title)} · مجموعة</span>
-            <span>{formatPrice(packSubtotal)}</span>
-          </div>
-          {packItems.map(({ color, size }, idx) => (
-          <div key={idx} className="pack-item-price" style={{ fontSize: "13px", color: "#555" }}>
-          <span>· {getColorLabelAr(color)} · {size}</span>
-          </div>
-          ))}
-          <div>
+                  <div className="order-line-summary">
+                    <span>{packSize} × {getProductTitleAr(product.title)} · مجموعة</span>
+                    <span>{formatPrice(packSubtotal)}</span>
+                  </div>
+                  <div>
             <span>التوصيل · {DELIVERY_LABELS[deliveryType]}</span>
             <span>{selectedShippingRate ? formatPrice(shippingFee) : "اختاروا الولاية"}</span>
           </div>
