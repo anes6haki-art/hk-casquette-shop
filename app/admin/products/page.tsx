@@ -20,14 +20,22 @@ export default async function AdminProductsPage() {
     bestSellerImage: "",
   };
   let productsError = false;
-  try {
-    [products, settings] = await Promise.all([
-      getProductsForAdmin(),
-      getStorefrontSettings(),
-    ]);
-  } catch (error: unknown) {
-    console.error("Failed to load admin products.", error);
+  let settingsError = false;
+  const [productsResult, settingsResult] = await Promise.allSettled([
+    getProductsForAdmin(),
+    getStorefrontSettings(),
+  ]);
+  if (productsResult.status === "fulfilled") {
+    products = productsResult.value;
+  } else {
+    console.error("Failed to load admin products.", productsResult.reason);
     productsError = true;
+  }
+  if (settingsResult.status === "fulfilled") {
+    settings = settingsResult.value;
+  } else {
+    console.error("Failed to load storefront settings.", settingsResult.reason);
+    settingsError = true;
   }
 
   return (
@@ -58,7 +66,13 @@ export default async function AdminProductsPage() {
           </p>
         ) : (
           <>
-            <BestSellersManager products={products} settings={settings} />
+            {settingsError ? (
+              <p className="admin-data-error" role="alert">
+                تعذر تحميل إعدادات أفضل المبيعات. المنتجات متاحة للإدارة، لكن إعداد القسم غير متاح حالياً.
+              </p>
+            ) : (
+              <BestSellersManager products={products} settings={settings} />
+            )}
             <ProductsManager products={products} />
           </>
         )}
