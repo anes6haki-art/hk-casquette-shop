@@ -113,13 +113,18 @@ export default function OfferPackSelector({
             />
             </svg>
             </div>
-            <div className="pack-card-content flex-1 text-center py-3">
-            <span className="pack-card-number text-xl font-bold text-amber-600">#{n}</span>
-            <span className="pack-card-sub text-xs text-gray-400 block">{sub}</span>
-            <span className="pack-card-label font-medium text-sm block">{label}</span>
-            <span className="pack-card-sub text-xs text-gray-400 block">{sub}</span>
-            )}
-            <span className="pack-card-price font-bold text-lg text-emerald-600">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
+            <div className="pack-card-content flex-1 text-center py-1">
+              <span className="pack-card-number text-sm font-bold text-red-600">#{n}</span>
+              <div>
+                <span className="pack-card-label font-semibold text-xs block leading-tight">{label}</span>
+                <span className="pack-card-sub text-[10px] text-gray-400 block leading-tight">{sub}</span>
+              </div>
+              <span className="pack-card-price font-bold text-sm text-red-600">{new Intl.NumberFormat("ar-DZ").format(price)} دج</span>
+              {highlight && n > 1 && (
+                <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-semibold text-red-800 bg-red-100 rounded-full">وفر</span>
+              )}
+            </div>
+          </div>
         ))}
             <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold text-amber-800 bg-amber-100 rounded-full">وفر</span>
       {packSize > 1 && (
