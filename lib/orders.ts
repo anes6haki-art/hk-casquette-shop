@@ -7,6 +7,7 @@ import {
   isOrderStatus,
   isDeliveryType,
   isCommuneForWilaya,
+  getOfferPackPrice,
   SHIPPING_FEE,
   WILAYAS,
   type NewOrder,
@@ -125,7 +126,20 @@ export async function createOrder(input: NewOrder) {
       throw new Error("الكمية المطلوبة غير متوفرة في المخزون.");
     }
   }
-  const subtotal = orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  let subtotal = orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const isOfferPack = uniqueProductIds.length === 1
+    && orderItems.length >= 1
+    && orderItems.length <= 3
+    && orderItems.length === totalQuantity;
+  if (isOfferPack) {
+    subtotal = getOfferPackPrice(orderItems[0].unitPrice, totalQuantity);
+    const baseItemPrice = Math.floor(subtotal / orderItems.length);
+    let remainingPrice = subtotal % orderItems.length;
+    for (const item of orderItems) {
+      item.unitPrice = baseItemPrice + (remainingPrice > 0 ? 1 : 0);
+      remainingPrice -= remainingPrice > 0 ? 1 : 0;
+    }
+  }
   const orderProductTitle = [...new Set(orderItems.map((item) => item.title))].join(", ").slice(0, 500);
   const unitPrice = orderItems[0].unitPrice;
 

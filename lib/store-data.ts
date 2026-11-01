@@ -90,6 +90,11 @@ export function getColorLabelAr(color: string) {
   return COLOR_LABELS_AR[color] ?? color;
 }
 
+export function getOfferPackPrice(unitPrice: number, quantity: number) {
+  const multiplier = quantity === 2 ? 1.8 : quantity === 3 ? 2.6 : 1;
+  return Math.round(unitPrice * multiplier);
+}
+
 export function getProductTitleAr(title: string) {
   return PRODUCT_TITLE_LABELS_AR[title] ?? title;
 }

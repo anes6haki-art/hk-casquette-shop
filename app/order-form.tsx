@@ -6,6 +6,7 @@ import { submitOrder } from "./actions";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
+  getOfferPackPrice,
   getProductTitleAr,
   getWilayaLabelAr,
   SHIPPING_FEE,
@@ -64,7 +65,7 @@ export default function OrderForm({
   const shippingFee = selectedShippingRate
     ? deliveryType === "HOME" ? selectedShippingRate.homePrice : selectedShippingRate.deskPrice
     : SHIPPING_FEE;
-  const packSubtotal = product.discountedPrice * packItems.length;
+  const packSubtotal = getOfferPackPrice(product.discountedPrice, packSize);
   const total = packSubtotal + shippingFee;
 
   function getColorStock(color: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { getColorLabelAr, type ProductDto } from "@/lib/store-data";
+import { getColorLabelAr, getOfferPackPrice, type ProductDto } from "@/lib/store-data";
 
 const AVAILABLE_SIZES = ["Standard", "S", "M", "L"] as const;
 
@@ -36,9 +36,9 @@ export default function OfferPackSelector({
       )
     : [{ color: "Standard", colorHex: "#d4d4d8", stock: product.stockQuantity }];
   const offers = [
-    { count: 1, title: "قطعة واحدة", subtitle: "السعر العادي", multiplier: 1 },
-    { count: 2, title: "باقتان · قطعتان", subtitle: "عرض خاص", multiplier: 1.8 },
-    { count: 3, title: "ثلاث قطع", subtitle: "أفضل قيمة", multiplier: 2.6 },
+    { count: 1, title: "قطعة واحدة", subtitle: "السعر العادي" },
+    { count: 2, title: "باقتان · قطعتان", subtitle: "عرض خاص" },
+    { count: 3, title: "ثلاث قطع", subtitle: "أفضل قيمة" },
   ];
 
   function selectPack(count: number) {
@@ -88,9 +88,9 @@ export default function OfferPackSelector({
       </div>
 
       <div className="offer-pack-list">
-        {offers.map(({ count, title, subtitle, multiplier }) => {
+        {offers.map(({ count, title, subtitle }) => {
           const isSelected = packSize === count;
-          const price = Math.round(product.discountedPrice * multiplier);
+          const price = getOfferPackPrice(product.discountedPrice, count);
 
           return (
             <article
