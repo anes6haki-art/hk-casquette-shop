@@ -126,7 +126,7 @@ export default function OfferPackSelector({
             </div>
           </div>
         ))}
-            <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold text-amber-800 bg-amber-100 rounded-full">وفر</span>
+      </div>
       {packSize > 1 && (
         <div className="pack-customizers">
           <h3>تخصيص كل قطعة في الباقة</h3>
