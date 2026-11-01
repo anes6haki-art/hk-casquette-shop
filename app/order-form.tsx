@@ -69,8 +69,10 @@ export default function OrderForm({
   const total = packSubtotal + shippingFee;
 
   function getColorStock(color: string) {
-    const variant = product.variants.find((v) => v.colorName === color);
-    return variant?.stock ?? (product.variants.length === 0 ? product.stockQuantity : 0);
+    if (product.variants.length === 0) return product.stockQuantity;
+    return product.variants
+      .filter((variant) => variant.colorName === color)
+      .reduce((stock, variant) => stock + variant.stock, 0);
   }
 
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
@@ -91,8 +93,11 @@ export default function OrderForm({
       phone: formPhone,
       wilaya,
       commune: String(formData.get("commune") ?? ""),
+      offerPack: true,
             items: packItems.map((item) => {
-        const variant = product.variants.find(v => v.colorName === item.color);
+        const variant = product.variants.find((candidate) =>
+          candidate.colorName === item.color && candidate.size === item.size && candidate.stock > 0,
+        );
         return {
           productId: product.id,
           color: item.color,
@@ -118,7 +123,9 @@ export default function OrderForm({
         shippingFee: savedOrder.shippingFee,
         totalPrice: savedOrder.totalPrice,
         items: packItems.map((it) => {
-          const variant = product.variants.find(v => v.colorName === it.color);
+          const variant = product.variants.find((variant) =>
+            variant.colorName === it.color && variant.size === it.size && variant.stock > 0,
+          );
           return { productId: product.id, color: it.color, size: it.size, quantity: 1, variantId: variant?.id ?? '' };
         }),
       });

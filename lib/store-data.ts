@@ -133,6 +133,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export type NewOrder = {
   productId?: string;
+  offerPack?: boolean;
   name: string;
   phone: string;
   wilaya: string;

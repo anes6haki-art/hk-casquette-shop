@@ -18,6 +18,7 @@ export async function createOrder(input: NewOrder) {
   if (
     !input ||
     (input.productId !== undefined && typeof input.productId !== "string") ||
+    (input.offerPack !== undefined && typeof input.offerPack !== "boolean") ||
     typeof input.name !== "string" ||
     typeof input.phone !== "string" ||
     typeof input.wilaya !== "string" ||
@@ -87,6 +88,7 @@ export async function createOrder(input: NewOrder) {
   }
 
   const quantityByProduct = new Map<string, number>();
+  const quantityByVariant = new Map<string, number>();
   const orderItems = requestedItems.map((item) => {
     const product = productById.get(item.productId);
     if (!product) throw new Error("أحد المنتجات لم يعد متاحاً.");
@@ -108,9 +110,13 @@ export async function createOrder(input: NewOrder) {
     }
 
     const variant = product.variants.find((candidate) => candidate.id === item.variantId);
-    if (!variant || item.color !== variant.colorName) {
-      throw new Error("اللون المحدد لم يعد متاحاً.");
+    if (!variant || item.color !== variant.colorName || item.size !== variant.size) {
+      throw new Error("اللون أو المقاس المحدد لم يعد متاحاً.");
     }
+    if (variant.stock < item.quantity) {
+      throw new Error("المقاس المحدد نفد من المخزون.");
+    }
+    quantityByVariant.set(variant.id, (quantityByVariant.get(variant.id) ?? 0) + item.quantity);
     return {
       productId: product.id,
       title: product.title,
@@ -127,10 +133,15 @@ export async function createOrder(input: NewOrder) {
     }
   }
   let subtotal = orderItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const isOfferPack = uniqueProductIds.length === 1
-    && orderItems.length >= 1
-    && orderItems.length <= 3
-    && orderItems.length === totalQuantity;
+  const isOfferPack = input.offerPack === true;
+  if (isOfferPack && (
+    uniqueProductIds.length !== 1
+    || orderItems.length < 1
+    || orderItems.length > 3
+    || orderItems.length !== totalQuantity
+  )) {
+    throw new Error("الباقة المحددة غير صالحة.");
+  }
   if (isOfferPack) {
     subtotal = getOfferPackPrice(orderItems[0].unitPrice, totalQuantity);
     const baseItemPrice = Math.floor(subtotal / orderItems.length);
@@ -167,6 +178,15 @@ export async function createOrder(input: NewOrder) {
       });
       if (stockUpdate.count !== 1) {
         throw new Error("تغير المخزون للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
+      }
+    }
+    for (const [variantId, quantity] of quantityByVariant) {
+      const stockUpdate = await transaction.productVariant.updateMany({
+        where: { id: variantId, stock: { gte: quantity } },
+        data: { stock: { decrement: quantity } },
+      });
+      if (stockUpdate.count !== 1) {
+        throw new Error("تغير مخزون اللون أو المقاس للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
       }
     }
 

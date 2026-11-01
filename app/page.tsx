@@ -2,7 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { getStorefrontProducts } from "@/lib/products";
-import { getColorLabelAr, getProductTitleAr } from "@/lib/store-data";
+import { getShippingRatesForCheckout } from "@/lib/orders";
+import { getProductTitleAr } from "@/lib/store-data";
+import { AddToCartButton, CartButton, CartProvider } from "@/app/components/storefront-cart";
 
 export const instant = false;
 
@@ -22,9 +24,13 @@ function CapIllustration() {
 
 export default async function Home() {
   await connection();
-  const products = await getStorefrontProducts();
+  const [products, shippingRates] = await Promise.all([
+    getStorefrontProducts(),
+    getShippingRatesForCheckout(),
+  ]);
 
   return (
+    <CartProvider products={products} shippingRates={shippingRates}>
     <main className="shop-home">
       <header className="shop-header">
         <Link className="shop-brand" href="/" aria-label="متجر إتش كيه للقبعات، الصفحة الرئيسية">
@@ -36,6 +42,7 @@ export default async function Home() {
           <a href="#engagements">التوصيل والدفع</a>
         </nav>
         <div className="shop-header-actions">
+          <CartButton />
           <Link className="shop-header-cta" href="#catalogue">تسوقوا القبعات <span>↗</span></Link>
         </div>
       </header>
@@ -102,6 +109,7 @@ export default async function Home() {
                       <Link className="cap-buy-button" href={`/products/${product.id}`} aria-disabled={product.stockQuantity < 1}>
                         أطلب الآن <span>→</span>
                       </Link>
+                      <AddToCartButton product={product} />
                     </div>
                   </div>
                 </div>
@@ -117,5 +125,6 @@ export default async function Home() {
 
       </footer>
     </main>
+    </CartProvider>
   );
 }
