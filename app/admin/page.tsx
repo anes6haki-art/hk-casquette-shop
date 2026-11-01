@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { getOrdersForAdmin, getShippingRatesForAdmin } from "@/lib/orders";
-import { DELIVERY_LABELS, getColorLabelAr, getProductTitleAr, getWilayaLabelAr, ORDER_STATUSES, isOrderStatus, type DeliveryType } from "@/lib/store-data";
+import { DELIVERY_LABELS, getColorLabelAr, getCommuneLabelAr, getProductTitleAr, getWilayaLabelAr, ORDER_STATUSES, isOrderStatus, type DeliveryType } from "@/lib/store-data";
 import AdminAuthFallback, {
   getAdminAuthFallbackMessage,
   getAdminErrorDetail,
@@ -158,7 +158,7 @@ export default async function AdminDashboardPage() {
                           )}
                         </td>
                         <td>{order.phone}</td>
-                        <td><strong>{getWilayaLabelAr(order.wilaya)}</strong><small>{order.commune}</small></td>
+                        <td><strong>{getWilayaLabelAr(order.wilaya)}</strong><small>{getCommuneLabelAr(order.commune, order.wilaya)}</small></td>
                         <td>{DELIVERY_LABELS[order.deliveryType as DeliveryType] ?? "التوصيل إلى المنزل"}</td>
                         <td>{order.quantity}</td>
                         <td className="admin-price">{formatPrice(order.totalPrice)}</td>

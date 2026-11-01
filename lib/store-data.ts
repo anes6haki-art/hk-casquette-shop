@@ -1,4 +1,7 @@
 import communesByWilaya from "./communes-by-wilaya.json";
+import communeLabelsAr from "./commune-labels-ar.json";
+
+const COMMUNE_LABELS_AR: Record<string, string> = communeLabelsAr;
 
 export const SHIPPING_FEE = 600;
 
@@ -32,7 +35,13 @@ export const WILAYA_LABELS_AR = [
 
 export function getWilayaLabelAr(wilaya: string) {
   const index = WILAYAS.indexOf(wilaya as (typeof WILAYAS)[number]);
-  return index < 0 ? wilaya : WILAYA_LABELS_AR[index];
+  return index < 0 ? "غير محددة" : WILAYA_LABELS_AR[index];
+}
+
+export function getCommuneLabelAr(commune: string, wilaya: string) {
+  const label = COMMUNE_LABELS_AR[`${wilaya}|${commune}`];
+  if (label) return label;
+  return /[\u0600-\u06FF]/.test(commune) ? commune : "غير محددة";
 }
 
 export const ORDER_SIZES = ["Standard", "S", "M", "L"] as const;

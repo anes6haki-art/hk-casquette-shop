@@ -6,6 +6,7 @@ import { submitOrder } from "./actions";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
+  getCommuneLabelAr,
   getOfferPackPrice,
   getProductTitleAr,
   getWilayaLabelAr,
@@ -187,7 +188,7 @@ export default function OrderForm({
                 {availableCommunes.length > 0 ? "اختاروا البلدية" : "اختاروا الولاية أولاً"}
               </option>
               {availableCommunes.map((communeName) => (
-                <option value={communeName} key={communeName}>{communeName}</option>
+                <option value={communeName} key={communeName}>{getCommuneLabelAr(communeName, wilaya)}</option>
               ))}
             </select>
           </label>
@@ -250,7 +251,7 @@ export default function OrderForm({
                   {packSize} × {getProductTitleAr(product.title)} · مجموعة
                 </strong>
               </div>
-              <div><span>التوصيل</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {order.commune}، {getWilayaLabelAr(order.wilaya)}</strong></div>
+              <div><span>التوصيل</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {getCommuneLabelAr(order.commune, order.wilaya)}، {getWilayaLabelAr(order.wilaya)}</strong></div>
               <div><span>رسوم التوصيل</span><strong>{formatPrice(order.shippingFee)}</strong></div>
               <div><span>المبلغ عند الاستلام</span><strong>{formatPrice(order.totalPrice)}</strong></div>
             </div>

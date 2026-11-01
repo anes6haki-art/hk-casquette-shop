@@ -2,22 +2,12 @@
 
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
-
-// Algerian Wilayas (58)
-const WILAYAS = [
-  "01 - Adrar", "02 - Chlef", "03 - Laghouat", "04 - Oum El Bouaghi", "05 - Batna",
-  "06 - Béjaïa", "07 - Biskra", "08 - Béchar", "09 - Blida", "10 - Bouira",
-  "11 - Tamanghasset", "12 - Tébessa", "13 - Tlemcen", "14 - Tiaret", "15 - Tizi Ouzou",
-  "16 - Alger", "17 - Djelfa", "18 - Jijel", "19 - Sétif", "20 - Saïda",
-  "21 - Skikda", "22 - Sidi Bel Abbès", "23 - Annaba", "24 - Guelma", "25 - Constantine",
-  "26 - Médéa", "27 - Mostaganem", "28 - M'Sila", "29 - Mascara", "30 - Ouargla",
-  "31 - Oran", "32 - El Bayadh", "33 - Illizi", "34 - Bordj Bou Arreridj", "35 - Boumerdès",
-  "36 - El Tarf", "37 - Tindouf", "38 - Tissemsilt", "39 - El Oued", "40 - Khenchela",
-  "41 - Souk Ahras", "42 - Tipaza", "43 - Mila", "44 - Aïn Defla", "45 - Naâma",
-  "46 - Aïn Témouchent", "47 - Ghardaïa", "48 - Relizane", "49 - El M'Ghair", "50 - El Meniaa",
-  "51 - Ouled Djellal", "52 - Bordj Baji Mokhtar", "53 - Béni Abbès", "54 - Timimoun", "55 - Touggourt",
-  "56 - Djanet", "57 - In Salah", "58 - In Guezzam"
-];
+import {
+  COMMUNES_BY_WILAYA_CODE,
+  getCommuneLabelAr,
+  getWilayaLabelAr,
+  WILAYAS,
+} from "@/lib/store-data";
 
 const PRODUCT = {
   name: "SmartWatch Ultra Pro Max",
@@ -35,6 +25,8 @@ export default function LandingPage() {
   const [commune, setCommune] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const wilayaCode = String(WILAYAS.findIndex((name) => name === wilaya) + 1);
+  const availableCommunes = wilaya === "" ? [] : COMMUNES_BY_WILAYA_CODE[wilayaCode] ?? [];
 
   const totalPrice = useMemo(() => {
     return (PRODUCT.price * quantity) + PRODUCT.shippingFee;
@@ -69,13 +61,13 @@ export default function LandingPage() {
           </div>
           <h2 className="text-3xl font-black text-gray-900 mb-4">Commande Reçue !</h2>
           <p className="text-gray-500 mb-8 leading-relaxed">
-            Merci <span className="font-bold text-gray-900">{fullName}</span>, votre commande a été enregistrée avec succès. Notre équipe vous appellera au <span className="font-bold text-gray-900">{phone}</span> pour confirmer l'envoi.
+            Merci <span className="font-bold text-gray-900">{fullName}</span>, votre commande a été enregistrée avec succès. Notre équipe vous appellera au <span className="font-bold text-gray-900">{phone}</span> pour confirmer l&apos;envoi.
           </p>
           
           <div className="bg-gray-50 rounded-2xl p-6 text-left mb-8 space-y-4 border border-gray-100">
             <div className="flex justify-between items-center pb-3 border-b border-gray-200">
               <span className="text-gray-400 text-xs uppercase font-bold tracking-wider">Résumé</span>
-              <span className="text-gray-900 font-black">#DZ-{Math.floor(Math.random() * 9000) + 1000}</span>
+              <span className="text-gray-900 font-black">#DZ-{phone.replace(/\D/g, "").slice(-4) || "0000"}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Produit</span>
@@ -83,7 +75,7 @@ export default function LandingPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Destination</span>
-              <span className="font-bold text-gray-900">{commune}, {wilaya.split(' - ')[1]}</span>
+              <span className="font-bold text-gray-900">{getCommuneLabelAr(commune, wilaya)}، {getWilayaLabelAr(wilaya)}</span>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="font-bold text-gray-900">Total à payer</span>
@@ -106,7 +98,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-orange-100 selection:text-orange-900" dir="ltr">
       {/* Top Banner */}
       <div className="bg-orange-600 text-white py-2 px-4 text-center text-xs font-bold tracking-widest uppercase">
-        🔥 Offre Spéciale : -40% Aujourd'hui Seulement 🔥
+        🔥 Offre Spéciale : -40% Aujourd&apos;hui Seulement 🔥
       </div>
 
       {/* Header */}
@@ -143,7 +135,7 @@ export default function LandingPage() {
             </div>
             
             <h1 className="text-6xl lg:text-8xl font-black leading-[1] tracking-tight text-gray-900">
-              L'élégance <br />
+              L&apos;élégance <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-orange-400">Connectée.</span>
             </h1>
             
@@ -166,7 +158,7 @@ export default function LandingPage() {
                 <div className="flex items-center -space-x-3 mb-2">
                   {[1,2,3,4].map(i => (
                     <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-gray-100 overflow-hidden shadow-sm">
-                      <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="User" />
+                      <Image src={`https://i.pravatar.cc/100?img=${i+20}`} alt="مستخدم" width={48} height={48} unoptimized />
                     </div>
                   ))}
                   <div className="w-12 h-12 rounded-full border-4 border-white bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-black shadow-sm">
@@ -295,7 +287,7 @@ export default function LandingPage() {
             <div className="lg:w-[60%] p-12 lg:p-16">
               <div className="flex items-center gap-3 mb-10">
                 <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center font-black">01</div>
-                <h3 className="text-2xl font-black">Formulaire d'achat</h3>
+                <h3 className="text-2xl font-black">Formulaire d&apos;achat</h3>
               </div>
               
               <form onSubmit={handleSubmit} className="space-y-8">
@@ -330,23 +322,34 @@ export default function LandingPage() {
                       <select 
                         required 
                         value={wilaya}
-                        onChange={(e) => setWilaya(e.target.value)}
+                        onChange={(e) => {
+                          setWilaya(e.target.value);
+                          setCommune("");
+                        }}
                         className="w-full px-6 py-5 rounded-2xl border-2 border-gray-100 focus:border-orange-500 focus:bg-white outline-none transition-all bg-gray-50 font-bold appearance-none cursor-pointer"
                       >
                         <option value="">Choisir...</option>
-                        {WILAYAS.map(w => <option key={w} value={w}>{w}</option>)}
+                        {WILAYAS.map((name, index) => (
+                          <option key={name} value={name}>
+                            {String(index + 1).padStart(2, "0")} — {getWilayaLabelAr(name)}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Commune</label>
-                      <input 
-                        type="text" 
-                        required 
+                      <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">البلدية</label>
+                      <select
+                        required
                         value={commune}
                         onChange={(e) => setCommune(e.target.value)}
-                        placeholder="Ex: Kouba"
+                        disabled={!wilaya}
                         className="w-full px-6 py-5 rounded-2xl border-2 border-gray-100 focus:border-orange-500 focus:bg-white outline-none transition-all bg-gray-50 font-bold"
-                      />
+                      >
+                        <option value="" disabled>{wilaya ? "اختاروا البلدية" : "اختاروا الولاية أولاً"}</option>
+                        {availableCommunes.map((name) => (
+                          <option value={name} key={name}>{getCommuneLabelAr(name, wilaya)}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -413,7 +416,7 @@ export default function LandingPage() {
             <span>MARKET</span>
           </div>
           <p className="text-gray-400 text-sm font-medium mb-10 text-center max-w-md">
-            Le numéro #1 de l'e-commerce en Algérie. Qualité, Rapidité et Fiabilité.
+            Le numéro #1 de l&apos;e-commerce en Algérie. Qualité, Rapidité et Fiabilité.
           </p>
           <div className="flex gap-8 mb-10">
             {['Facebook', 'Instagram', 'TikTok'].map(s => (
@@ -421,7 +424,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]">
-            © 2024 DZ-MARKET · L'ALGERIE LIVRÉE CHEZ VOUS
+            © 2024 DZ-MARKET · L&apos;ALGERIE LIVRÉE CHEZ VOUS
           </div>
         </div>
       </footer>

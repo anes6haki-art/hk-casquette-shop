@@ -4,7 +4,9 @@ import { connection } from "next/server";
 import { getStorefrontProducts } from "@/lib/products";
 import { getShippingRatesForCheckout } from "@/lib/orders";
 import { getProductTitleAr } from "@/lib/store-data";
+import { getBestSellerProducts, getStorefrontSettings } from "@/lib/storefront-settings";
 import { AddToCartButton, CartButton, CartProvider } from "@/app/components/storefront-cart";
+import BestSellersShowcase from "@/app/components/best-sellers-showcase";
 
 export const instant = false;
 
@@ -24,10 +26,12 @@ function CapIllustration() {
 
 export default async function Home() {
   await connection();
-  const [products, shippingRates] = await Promise.all([
+  const [products, shippingRates, bestSellerSettings] = await Promise.all([
     getStorefrontProducts(),
     getShippingRatesForCheckout(),
+    getStorefrontSettings(),
   ]);
+  const bestSellerProducts = getBestSellerProducts(products, bestSellerSettings);
 
   return (
     <CartProvider products={products} shippingRates={shippingRates}>
@@ -55,20 +59,7 @@ export default async function Home() {
           <Link className="shop-primary-cta" href="#catalogue">اكتشفوا المجموعة <span>↓</span></Link>
           <div className="shop-hero-trust"><span>✳ التوصيل إلى 58 ولاية</span><span>✳ الدفع عند الاستلام</span></div>
         </div>
-        <div className="shop-hero-art">
-          <div className="shop-hero-stamp">HK<br /><small>CASQUETTE SHOP</small></div>
-          <div className="shop-hero-product">
-            <Image
-              src="/images/blue-baseball-cap.jpg"
-              alt="قبعة زرقاء داكنة"
-              fill
-              priority
-              unoptimized
-              sizes="(max-width: 760px) 90vw, 48vw"
-            />
-          </div>
-          <span className="shop-hero-caption">قطعة مميزة · أزرق داكن</span>
-        </div>
+        <BestSellersShowcase products={bestSellerProducts} settings={bestSellerSettings} />
       </section>
 
       <section className="shop-trust-strip" id="engagements">

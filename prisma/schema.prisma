@@ -54,6 +54,14 @@ model Product {
   @@index([isActive, updatedAt])
 }
 
+model StorefrontSettings {
+  id                   Int    @id @default(1)
+  bestSellerProductIds String @default("[]")
+  bestSellerTitle      String @default("أفضل المبيعات")
+  bestSellerSubtitle   String @default("اختياراتنا المميزة لكم")
+  bestSellerImage      String @default("")
+}
+
 model ProductVariant {
   id        String   @id @default(cuid())
   productId String

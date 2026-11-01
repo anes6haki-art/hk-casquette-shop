@@ -12,6 +12,7 @@ import { submitOrder } from "@/app/actions";
 import {
   COMMUNES_BY_WILAYA_CODE,
   DELIVERY_LABELS,
+  getCommuneLabelAr,
   getColorLabelAr,
   getProductTitleAr,
   getWilayaLabelAr,
@@ -494,7 +495,7 @@ function CartDrawer({
                   required
                 >
                   <option value="" disabled>{communes.length > 0 ? "اختاروا البلدية" : "اختاروا الولاية أولاً"}</option>
-                  {communes.map((name) => <option value={name} key={name}>{name}</option>)}
+                  {communes.map((name) => <option value={name} key={name}>{getCommuneLabelAr(name, wilaya)}</option>)}
                 </select>
               </label>
             </div>

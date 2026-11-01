@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { getProductsForAdmin } from "@/lib/products";
+import { getStorefrontSettings } from "@/lib/storefront-settings";
+import BestSellersManager from "./best-sellers-manager";
 import ProductsManager from "./products-manager";
 
 export const instant = false;
@@ -11,9 +13,18 @@ export default async function AdminProductsPage() {
   await connection();
   if (!(await hasAdminSession())) redirect("/admin/login");
   let products: Awaited<ReturnType<typeof getProductsForAdmin>> = [];
+  let settings: Awaited<ReturnType<typeof getStorefrontSettings>> = {
+    bestSellerProductIds: [],
+    bestSellerTitle: "أفضل المبيعات",
+    bestSellerSubtitle: "اختياراتنا المميزة لكم",
+    bestSellerImage: "",
+  };
   let productsError = false;
   try {
-    products = await getProductsForAdmin();
+    [products, settings] = await Promise.all([
+      getProductsForAdmin(),
+      getStorefrontSettings(),
+    ]);
   } catch (error: unknown) {
     console.error("Failed to load admin products.", error);
     productsError = true;
@@ -25,6 +36,7 @@ export default async function AdminProductsPage() {
         <Link className="shop-brand admin-shop-brand" href="/"><span className="shop-brand-mark">HK</span><span>متجر HK للقبعات</span></Link>
         <nav className="admin-header-links" aria-label="التنقل في الإدارة">
           <Link href="/admin">الطلبات والتوصيل</Link>
+          <Link href="#best-sellers">أفضل المبيعات</Link>
           <Link href="/admin/products" aria-current="page">المنتجات</Link>
         </nav>
         <Link className="admin-logout-button" href="/admin">العودة إلى لوحة التحكم</Link>
@@ -45,7 +57,10 @@ export default async function AdminProductsPage() {
             تعذر تحميل المنتجات. تحققوا من إعداد قاعدة البيانات ومخطط PostgreSQL.
           </p>
         ) : (
-          <ProductsManager products={products} />
+          <>
+            <BestSellersManager products={products} settings={settings} />
+            <ProductsManager products={products} />
+          </>
         )}
       </section>
     </main>
