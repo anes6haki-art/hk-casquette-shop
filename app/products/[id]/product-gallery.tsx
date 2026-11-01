@@ -31,6 +31,24 @@ export default function ProductGallery({
 }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const selectedVariant = variants[selectedVariantIndex];
+  const colorOptions = Array.from(
+    variants.reduce((options, variant, index) => {
+      const current = options.get(variant.colorName);
+      if (current) {
+        if (current.stock === 0 && variant.stock > 0) {
+          current.index = index;
+        }
+        current.stock += variant.stock;
+      } else {
+        options.set(variant.colorName, {
+          variant,
+          index,
+          stock: variant.stock,
+        });
+      }
+      return options;
+    }, new Map<string, { variant: ProductVariantDto; index: number; stock: number }>()),
+  ).map(([color, option]) => ({ color, ...option }));
   const images = (selectedVariant?.images ?? imageUrls).filter(Boolean);
   const activeImage = images[selectedImage] ?? images[0];
 
@@ -76,18 +94,18 @@ export default function ProductGallery({
             اللون: <strong>{selectedVariant ? getColorLabelAr(selectedVariant.colorName) : ""}</strong>
           </span>
           <div className="product-color-options">
-                        {variants.map((variant, index) => (
+            {colorOptions.map(({ color, variant, index, stock }) => (
               <button
-                className={`product-color-option${selectedVariantIndex === index ? " is-selected" : ""}${isDisabled || variant.stock === 0 ? " is-disabled" : ""}`}
-                key={variant.id}
+                className={`product-color-option${selectedVariant?.colorName === color ? " is-selected" : ""}${isDisabled || stock === 0 ? " is-disabled" : ""}`}
+                key={color}
                 type="button"
-                onClick={() => !(isDisabled || variant.stock === 0) && onSelectVariant(index)}
-                disabled={isDisabled || variant.stock === 0}
-                aria-label={getColorLabelAr(variant.colorName)}
-                aria-pressed={selectedVariantIndex === index}
+                onClick={() => !(isDisabled || stock === 0) && onSelectVariant(index)}
+                disabled={isDisabled || stock === 0}
+                aria-label={getColorLabelAr(color)}
+                aria-pressed={selectedVariant?.colorName === color}
               >
                 <span className="product-color-swatch" style={{ backgroundColor: variant.colorHex }} />
-                <span>{getColorLabelAr(variant.colorName)}</span>
+                <span>{getColorLabelAr(color)}</span>
               </button>
             ))}
           </div>
