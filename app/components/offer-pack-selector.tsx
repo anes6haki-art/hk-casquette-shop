@@ -20,11 +20,20 @@ export default function OfferPackSelector({
   setPackItems: (items: PackItem[]) => void;
 }) {
   const colorOptions = product.variants.length > 0
-    ? product.variants.map((variant) => ({
-        color: variant.colorName,
-        colorHex: variant.colorHex,
-        stock: variant.stock,
-      }))
+    ? Array.from(
+        new Map(
+          product.variants.map((variant) => [
+            variant.colorName,
+            {
+              color: variant.colorName,
+              colorHex: variant.colorHex,
+              stock: product.variants
+                .filter((candidate) => candidate.colorName === variant.colorName)
+                .reduce((total, candidate) => total + candidate.stock, 0),
+            },
+          ]),
+        ).values(),
+      )
     : [{ color: "Standard", colorHex: "#d4d4d8", stock: product.stockQuantity }];
   const offers = [
     { count: 1, title: "قطعة واحدة", subtitle: "السعر العادي", multiplier: 1 },
@@ -44,8 +53,28 @@ export default function OfferPackSelector({
 
   function updateItem(index: number, field: keyof PackItem, value: string) {
     setPackItems(packItems.map((item, itemIndex) =>
-      itemIndex === index ? { ...item, [field]: value } : item,
+      itemIndex === index
+        ? {
+            ...item,
+            [field]: value,
+            ...(field === "color"
+              ? { size: getAvailableSizes(value)[0] ?? "Standard" }
+              : {}),
+          }
+        : item,
     ));
+  }
+
+  function getAvailableSizes(color: string) {
+    if (product.variants.length === 0) {
+      return product.stockQuantity > 0 ? [...AVAILABLE_SIZES] : [];
+    }
+
+    return AVAILABLE_SIZES.filter((size) =>
+      product.variants.some(
+        (variant) => variant.colorName === color && variant.size === size && variant.stock > 0,
+      ),
+    );
   }
 
   return (
@@ -103,6 +132,7 @@ export default function OfferPackSelector({
                       size: "Standard",
                     };
                     const selectedColor = colorOptions.find((option) => option.color === item.color);
+                    const availableSizes = getAvailableSizes(item.color);
 
                     return (
                       <fieldset className="offer-pack-item" key={index}>
@@ -142,15 +172,18 @@ export default function OfferPackSelector({
                           <span className="offer-pack-option-label">المقاس</span>
                           <div className="offer-pack-size-options" role="group" aria-label={`المقاس للقطعة ${index + 1}`}>
                             {AVAILABLE_SIZES.map((size) => {
-                              const isSizeSelected = item.size === size;
+                              const isSizeAvailable = availableSizes.includes(size);
+                              const isSizeSelected = item.size === size && isSizeAvailable;
 
                               return (
                                 <button
-                                  className={`offer-pack-size-option${isSizeSelected ? " is-selected border-red-500 ring-red-500" : ""}`}
+                                  className={`offer-pack-size-option${isSizeSelected ? " is-selected border-red-500 ring-red-500" : ""}${!isSizeAvailable ? " is-unavailable" : ""}`}
                                   key={size}
                                   type="button"
                                   onClick={() => updateItem(index, "size", size)}
+                                  disabled={!isSizeAvailable}
                                   aria-pressed={isSizeSelected}
+                                  aria-disabled={!isSizeAvailable}
                                 >
                                   {size}
                                 </button>

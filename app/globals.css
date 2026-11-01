@@ -4817,6 +4817,14 @@ html[dir="rtl"] .shop-footer {
   cursor: not-allowed;
 }
 
+.product-page .offer-pack-size-option:disabled {
+  border-color: #3f3f46;
+  background: #18181b;
+  color: #71717a;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .product-page .offer-pack-color-swatch {
   width: 17px;
   height: 17px;
