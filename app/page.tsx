@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { getStorefrontProducts } from "@/lib/products";
 import { getShippingRatesForCheckout } from "@/lib/orders";
 import { getProductTitleAr } from "@/lib/store-data";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 import { getBestSellerProducts, getStorefrontSettings } from "@/lib/storefront-settings";
 import { AddToCartButton, CartButton, CartProvider } from "@/app/components/storefront-cart";
 import BestSellersShowcase from "@/app/components/best-sellers-showcase";
@@ -85,7 +86,7 @@ export default async function Home() {
               <article className="cap-card" key={product.id}>
                 <Link className="cap-card-image" href={`/products/${product.id}`} aria-label={`عرض ${getProductTitleAr(product.title)}`}>
                   {product.imageUrls[0]
-                    ? <Image src={product.imageUrls[0]} alt={getProductTitleAr(product.title)} fill unoptimized sizes="(max-width: 560px) 90vw, (max-width: 900px) 44vw, 30vw" />
+                    ? <Image src={getAbsoluteImageUrl(product.imageUrls[0])} alt={getProductTitleAr(product.title)} fill unoptimized sizes="(max-width: 560px) 90vw, (max-width: 900px) 44vw, 30vw" />
                     : <CapIllustration />}
                   {product.originalPrice > product.discountedPrice && (
                     <span className="cap-discount">-{Math.round((1 - product.discountedPrice / product.originalPrice) * 100)}%</span>

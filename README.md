@@ -56,6 +56,8 @@ The homepage hero uses a local photograph of a blue baseball cap from [Wikimedia
 
 For Vercel, set `DATABASE_URL` in the project's Environment Variables to the PostgreSQL connection string, then ensure the Prisma schema has been pushed to that same database with `npx prisma db push`. Do not use `npm run db:deploy` for this PostgreSQL schema: the checked-in migration history was created for SQLite. Set the required admin and session secrets in Vercel as well; never commit `.env`. Uploaded images are written to `public/uploads`, which is not persistent storage on Vercel, so use durable object storage for production uploads. The database contains customer names, phone numbers, and delivery addresses, so protect the database and backups as sensitive personal data.
 
+Set `NEXT_PUBLIC_BASE_URL` to the canonical site origin (for example, `https://your-store.example`) when deploying behind a custom domain or proxy. Uploaded image URLs are returned as absolute URLs; existing relative image paths are resolved against this configured origin, the Vercel deployment URL, or the visitor's current origin.
+
 ## Available commands
 
 - `npm run dev` — start the development server

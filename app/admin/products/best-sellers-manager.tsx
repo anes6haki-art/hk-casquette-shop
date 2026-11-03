@@ -12,6 +12,7 @@ import {
   type ProductDto,
 } from "@/lib/store-data";
 import type { StorefrontSettingsDto } from "@/lib/storefront-settings";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 
 export default function BestSellersManager({
   products,
@@ -120,7 +121,7 @@ export default function BestSellersManager({
           />
           {image && (
             <div className="best-sellers-banner-preview">
-              <Image src={image} alt="معاينة صورة البانر" fill unoptimized sizes="240px" />
+              <Image src={getAbsoluteImageUrl(image)} alt="معاينة صورة البانر" fill unoptimized sizes="240px" />
             </div>
           )}
         </div>
@@ -144,7 +145,7 @@ export default function BestSellersManager({
               />
               <span className="best-seller-product-image">
                 {product.imageUrls[0]
-                  ? <Image src={product.imageUrls[0]} alt="" fill unoptimized sizes="80px" />
+                  ? <Image src={getAbsoluteImageUrl(product.imageUrls[0])} alt="" fill unoptimized sizes="80px" />
                   : <span aria-hidden="true">HK</span>}
               </span>
               <span className="best-seller-product-name">{getProductTitleAr(product.title)}</span>

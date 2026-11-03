@@ -7,6 +7,7 @@ import {
   getProductTitleAr,
   type ProductDto,
 } from "@/lib/store-data";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
   ACCEPTED_IMAGE_INPUT,
   MAX_UPLOAD_IMAGES,
@@ -460,7 +461,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                     <div className="product-image-previews" aria-label={`معاينة صور اللون ${variant.colorName || index + 1}`}>
                       {variantImages.map((imageUrl, imageIndex) => (
                         <div className="product-image-preview" key={`${imageUrl}-${imageIndex}`}>
-                          <Image src={imageUrl} alt={`Photo ${imageIndex + 1} de ${variant.colorName || `la couleur ${index + 1}`}`} width={52} height={52} unoptimized />
+                          <Image src={getAbsoluteImageUrl(imageUrl)} alt={`Photo ${imageIndex + 1} de ${variant.colorName || `la couleur ${index + 1}`}`} width={52} height={52} unoptimized />
                           <span>الصورة {imageIndex + 1}</span>
                           <button
                             type="button"
@@ -486,7 +487,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
             <div className="product-image-previews" aria-label="معاينة صور المنتج">
               {parseImageUrls(form.imageUrls).map((imageUrl, index) => (
                 <div className="product-image-preview" key={`${imageUrl}-${index}`}>
-                  <Image src={imageUrl} alt={`Aperçu de la photo ${index + 1}`} width={52} height={52} unoptimized />
+                  <Image src={getAbsoluteImageUrl(imageUrl)} alt={`Aperçu de la photo ${index + 1}`} width={52} height={52} unoptimized />
                   <span>الصورة {index + 1}</span>
                   <button
                     type="button"
@@ -544,7 +545,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                   className="product-admin-image"
                   role="img"
                   aria-label={getProductTitleAr(product.title)}
-                  style={product.imageUrls[0] ? { backgroundImage: `url("${product.imageUrls[0].replaceAll('"', "%22")}")` } : undefined}
+                  style={product.imageUrls[0] ? { backgroundImage: `url("${getAbsoluteImageUrl(product.imageUrls[0]).replaceAll('"', "%22")}")` } : undefined}
                 >
                   {!product.imageUrls[0] && <span>لا توجد صورة</span>}
                 </div>

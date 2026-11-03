@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getProductTitleAr, type ProductDto } from "@/lib/store-data";
 import type { StorefrontSettingsDto } from "@/lib/storefront-settings";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 
 function CapIllustration() {
   return (
@@ -29,7 +30,7 @@ export default function BestSellersShowcase({
       {settings.bestSellerImage && (
         <div className="best-sellers-banner">
           <Image
-            src={settings.bestSellerImage}
+            src={getAbsoluteImageUrl(settings.bestSellerImage)}
             alt=""
             fill
             priority
@@ -57,7 +58,7 @@ export default function BestSellersShowcase({
               </span>
               <span className="best-seller-showcase-image">
                 {product.imageUrls[0]
-                  ? <Image src={product.imageUrls[0]} alt="" fill unoptimized sizes="(max-width: 600px) 40vw, 200px" />
+                  ? <Image src={getAbsoluteImageUrl(product.imageUrls[0])} alt="" fill unoptimized sizes="(max-width: 600px) 40vw, 200px" />
                   : <CapIllustration />}
               </span>
               <span className="best-seller-showcase-info">

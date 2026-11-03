@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getColorLabelAr, getProductTitleAr, type ProductVariantDto } from "@/lib/store-data";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 
 function CapIllustration() {
   return (
@@ -62,7 +63,7 @@ export default function ProductGallery({
         {activeImage
           ? (
             <Image
-              src={activeImage}
+              src={getAbsoluteImageUrl(activeImage)}
               alt={`${getProductTitleAr(title)}${selectedVariant ? ` - ${getColorLabelAr(selectedVariant.colorName)}` : ""} - الصورة ${selectedImage + 1}`}
               fill
               priority
@@ -83,7 +84,7 @@ export default function ProductGallery({
               aria-label={`عرض الصورة ${index + 1} من ${images.length}`}
               aria-pressed={selectedImage === index}
             >
-              <Image src={image} alt="" fill unoptimized sizes="88px" />
+              <Image src={getAbsoluteImageUrl(image)} alt="" fill unoptimized sizes="88px" />
             </button>
           ))}
         </div>

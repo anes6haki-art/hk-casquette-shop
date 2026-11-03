@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { submitOrder } from "@/app/actions";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
   COMMUNES_BY_WILAYA_CODE,
   DELIVERY_LABELS,
@@ -342,7 +343,7 @@ function CartDrawer({
                       <article className="storefront-cart-item" key={item.id}>
                         <div className="storefront-cart-item-image">
                           {product.imageUrls[0]
-                            ? <Image src={product.imageUrls[0]} alt="" fill unoptimized sizes="76px" />
+                            ? <Image src={getAbsoluteImageUrl(product.imageUrls[0])} alt="" fill unoptimized sizes="76px" />
                             : <span aria-hidden="true">HK</span>}
                         </div>
                         <div className="storefront-cart-item-main">

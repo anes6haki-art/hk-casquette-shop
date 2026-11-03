@@ -7,6 +7,7 @@ import {
   UploadStorageError,
   writeUploadFile,
 } from "@/lib/upload-storage";
+import { getAbsoluteImageUrl } from "@/lib/image-url";
 
 // The Node.js runtime is the default, and it cannot be declared explicitly
 // while `cacheComponents` is enabled in `next.config.ts`.
@@ -382,7 +383,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const imageUrls = validatedFiles.map((file) => `${UPLOAD_URL_PREFIX}/${file.filename}`);
+    const imageUrls = validatedFiles.map((file) =>
+      getAbsoluteImageUrl(`${UPLOAD_URL_PREFIX}/${file.filename}`, request.url),
+    );
     logEvent(requestId, "success", {
       count: imageUrls.length,
       durationMs: Date.now() - startedAt,
