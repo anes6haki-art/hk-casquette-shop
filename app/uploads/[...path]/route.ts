@@ -20,7 +20,7 @@ function notFound() {
 }
 
 /**
- * Serves the product images.
+ * Serves legacy product images stored on local disk.
  *
  * The files uploaded at runtime live outside of `public` when the deployment has a
  * read-only project folder, so they are streamed from the disk. The images

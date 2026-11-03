@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+import AdminImage from "./admin-image";
 import {
   ACCEPTED_IMAGE_INPUT,
   uploadProductImages,
@@ -121,7 +121,7 @@ export default function BestSellersManager({
           />
           {image && (
             <div className="best-sellers-banner-preview">
-              <Image src={getAbsoluteImageUrl(image)} alt="معاينة صورة البانر" fill unoptimized sizes="240px" />
+              <AdminImage src={getAbsoluteImageUrl(image)} alt="معاينة صورة البانر" fill sizes="240px" />
             </div>
           )}
         </div>
@@ -145,7 +145,7 @@ export default function BestSellersManager({
               />
               <span className="best-seller-product-image">
                 {product.imageUrls[0]
-                  ? <Image src={getAbsoluteImageUrl(product.imageUrls[0])} alt="" fill unoptimized sizes="80px" />
+                  ? <AdminImage src={getAbsoluteImageUrl(product.imageUrls[0])} alt="" fill sizes="80px" />
                   : <span aria-hidden="true">HK</span>}
               </span>
               <span className="best-seller-product-name">{getProductTitleAr(product.title)}</span>

@@ -1859,6 +1859,8 @@ a {
 }
 
 .product-admin-image {
+  position: relative;
+  overflow: hidden;
   min-height: 175px;
   display: grid;
   place-items: center;

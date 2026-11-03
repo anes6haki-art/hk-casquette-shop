@@ -4,8 +4,8 @@
  * Usage:
  *   node scripts/test-upload.mjs [path/to/image]
  *
- * The admin secret is read from the environment or from the `.env` file of the
- * project, it is never stored in this script.
+ * The admin and Cloudinary credentials are read from the environment or from
+ * the project's `.env` file; they are never stored in this script.
  */
 import { createHmac } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -30,6 +30,10 @@ const env = { ...readEnvFile(), ...process.env };
 const secret = env.ADMIN_SESSION_SECRET;
 if (!secret) {
   console.error("ADMIN_SESSION_SECRET is missing: set it in .env or in the environment.");
+  process.exit(2);
+}
+if (!env.CLOUDINARY_CLOUD_NAME || !env.CLOUDINARY_API_KEY || !env.CLOUDINARY_API_SECRET) {
+  console.error("Cloudinary credentials are missing: configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.");
   process.exit(2);
 }
 
@@ -122,18 +126,26 @@ function report(name, result, expectedStatus) {
   console.log(`${ok ? "PASS" : "FAIL"} ${name}: status=${result.status} (expected ${expectedStatus})`, result.payload);
 }
 
-// 1. A valid PNG must be stored and served back.
+// 1. A valid PNG must be stored in Cloudinary and served back from its HTTPS URL.
 const uploaded = await postUpload({
   files: [{ bytes, type: "image/png", name: "test.png" }],
 });
 report("valid png", uploaded, 200);
 if (uploaded.status === 200 && Array.isArray(uploaded.payload.imageUrls)) {
   const url = uploaded.payload.imageUrls[0];
-  const fetched = await fetchWithRetry(`${base}${url}`);
-  const sameSize = fetched.status === 200 && (await fetched.arrayBuffer()).byteLength === bytes.length;
-  if (!sameSize) failures += 1;
+  let validCloudinaryUrl = false;
+  try {
+    const parsedUrl = new URL(url);
+    validCloudinaryUrl = parsedUrl.protocol === "https:" &&
+      parsedUrl.hostname === "res.cloudinary.com" &&
+      parsedUrl.pathname.split("/")[1] === env.CLOUDINARY_CLOUD_NAME;
+  } catch {}
+  const fetched = validCloudinaryUrl ? await fetchWithRetry(url) : null;
+  const servedFromCloudinary = fetched?.status === 200 &&
+    fetched.headers.get("content-type")?.startsWith("image/");
+  if (!servedFromCloudinary) failures += 1;
   console.log(
-    `${sameSize ? "PASS" : "FAIL"} stored file is served back: ${url} status=${fetched.status} type=${fetched.headers.get("content-type")}`,
+    `${servedFromCloudinary ? "PASS" : "FAIL"} image is served from Cloudinary: ${url} status=${fetched?.status ?? "invalid URL"} type=${fetched?.headers.get("content-type") ?? "n/a"}`,
   );
 }
 

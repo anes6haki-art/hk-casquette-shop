@@ -5,7 +5,7 @@ import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-/** Every uploaded product image is served from this URL prefix. */
+/** URL prefix used to serve legacy images that were stored on local disk. */
 export const UPLOAD_URL_PREFIX = "/uploads";
 
 /** Images committed to the repository live here and are served statically by Next.js. */

@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useTransition, type ChangeEvent, type FormEvent } from "react";
+import AdminImage from "./admin-image";
 import {
   getProductDescriptionAr,
   getProductTitleAr,
@@ -334,7 +334,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                 disabled={isUploading || isPending}
                 onChange={(event) => void handleImageUpload(event)}
               />
-              <small>JPEG أو PNG أو WebP أو AVIF · 5 ميغابايت كحد أقصى للصورة · 8 صور إجمالاً.</small>
+              <small>JPEG أو PNG أو WebP أو AVIF · 12 ميغابايت كحد أقصى للصورة · 8 صور إجمالاً.</small>
             </label>
             <label className="product-field product-field-wide">
               <span>صور المنتج (رابط واحد في كل سطر، 8 كحد أقصى)</span>
@@ -444,7 +444,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                         disabled={isUploading || isPending}
                         onChange={(event) => void handleVariantImageUpload(index, event)}
                       />
-                      <small>حتى 8 صور بصيغة JPEG أو PNG أو WebP أو AVIF · 5 ميغابايت كحد أقصى للصورة.</small>
+                      <small>حتى 8 صور بصيغة JPEG أو PNG أو WebP أو AVIF · 12 ميغابايت كحد أقصى للصورة.</small>
                     </label>
                     <label className="product-field product-field-wide">
                       <span>روابط الصور (رابط واحد في كل سطر)</span>
@@ -461,7 +461,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                     <div className="product-image-previews" aria-label={`معاينة صور اللون ${variant.colorName || index + 1}`}>
                       {variantImages.map((imageUrl, imageIndex) => (
                         <div className="product-image-preview" key={`${imageUrl}-${imageIndex}`}>
-                          <Image src={getAbsoluteImageUrl(imageUrl)} alt={`Photo ${imageIndex + 1} de ${variant.colorName || `la couleur ${index + 1}`}`} width={52} height={52} unoptimized />
+                          <AdminImage src={getAbsoluteImageUrl(imageUrl)} alt={`Photo ${imageIndex + 1} de ${variant.colorName || `la couleur ${index + 1}`}`} width={52} height={52} />
                           <span>الصورة {imageIndex + 1}</span>
                           <button
                             type="button"
@@ -487,7 +487,7 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
             <div className="product-image-previews" aria-label="معاينة صور المنتج">
               {parseImageUrls(form.imageUrls).map((imageUrl, index) => (
                 <div className="product-image-preview" key={`${imageUrl}-${index}`}>
-                  <Image src={getAbsoluteImageUrl(imageUrl)} alt={`Aperçu de la photo ${index + 1}`} width={52} height={52} unoptimized />
+                  <AdminImage src={getAbsoluteImageUrl(imageUrl)} alt={`Aperçu de la photo ${index + 1}`} width={52} height={52} />
                   <span>الصورة {index + 1}</span>
                   <button
                     type="button"
@@ -545,9 +545,10 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                   className="product-admin-image"
                   role="img"
                   aria-label={getProductTitleAr(product.title)}
-                  style={product.imageUrls[0] ? { backgroundImage: `url("${getAbsoluteImageUrl(product.imageUrls[0]).replaceAll('"', "%22")}")` } : undefined}
                 >
-                  {!product.imageUrls[0] && <span>لا توجد صورة</span>}
+                  {product.imageUrls[0]
+                    ? <AdminImage src={getAbsoluteImageUrl(product.imageUrls[0])} alt="" fill sizes="(max-width: 700px) 100vw, 33vw" />
+                    : <span>لا توجد صورة</span>}
                 </div>
                 <div className="product-admin-body">
                   <div className="product-admin-title-row">

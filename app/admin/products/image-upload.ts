@@ -245,9 +245,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   UNSUPPORTED_MEDIA_TYPE: "صيغة إحدى الصور غير مدعومة. استعملوا JPG أو PNG أو WebP.",
   UNSUPPORTED_FORMAT: "صيغة إحدى الصور غير مدعومة. استعملوا JPG أو PNG أو WebP.",
   TRUNCATED_FILE: "إحدى الصور ناقصة أو تالفة. أعدوا اختيارها.",
-  NO_WRITABLE_UPLOAD_DIRECTORY: "الخادم لا يستطيع حفظ الصور حالياً. حاولوا لاحقاً.",
-  UPLOAD_DIRECTORY_NOT_WRITABLE: "الخادم لا يستطيع حفظ الصور حالياً. حاولوا لاحقاً.",
-  UPLOAD_FAILED: "تعذّر رفع الصور. حاولوا مجدداً.",
+  CLOUDINARY_NOT_CONFIGURED: "لم يتم إعداد التخزين السحابي للصور. تواصلوا مع المسؤول.",
+  CLOUDINARY_UNAVAILABLE: "تعذّر الاتصال بالتخزين السحابي. حاولوا مجدداً.",
+  CLOUDINARY_INVALID_RESPONSE: "تعذّر التحقق من الصور المرفوعة. حاولوا مجدداً.",
+  CLOUDINARY_UPLOAD_FAILED: "تعذّر رفع الصور إلى التخزين السحابي. حاولوا مجدداً.",
   UNEXPECTED_ERROR: "تعذّر رفع الصور. حاولوا مجدداً.",
 };
 

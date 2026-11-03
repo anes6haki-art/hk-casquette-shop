@@ -1,13 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { hasAdminSession } from "@/lib/admin-auth";
 import {
-  removeUploadFile,
-  resolveUploadDirectoryInfo,
-  UPLOAD_URL_PREFIX,
-  UploadStorageError,
-  writeUploadFile,
-} from "@/lib/upload-storage";
-import { getAbsoluteImageUrl } from "@/lib/image-url";
+  CloudinaryUploadError,
+  deleteCloudinaryImage,
+  uploadImageToCloudinary,
+} from "@/lib/cloudinary";
 
 // The Node.js runtime is the default, and it cannot be declared explicitly
 // while `cacheComponents` is enabled in `next.config.ts`.
@@ -349,43 +346,29 @@ export async function POST(request: Request) {
       })),
     });
 
-    let storage;
-    try {
-      storage = await resolveUploadDirectoryInfo();
-    } catch (error) {
-      logEvent(requestId, "failed", { reason: "no_storage", error: describeError(error) });
-      return jsonError(
-        500,
-        "NO_WRITABLE_UPLOAD_DIRECTORY",
-        "Le serveur ne peut pas enregistrer les images pour le moment. Réessayez plus tard.",
-      );
-    }
-
-    logEvent(requestId, "storage", {
-      directory: storage.directory,
-      source: storage.source,
-      persistent: storage.persistent,
-    });
-
-    const savedPaths: string[] = [];
+    const uploadedImages: { publicId: string; url: string }[] = [];
     try {
       for (const file of validatedFiles) {
-        savedPaths.push(await writeUploadFile(file.filename, file.bytes));
+        uploadedImages.push(
+          await uploadImageToCloudinary(file.filename, file.format.mimeType, file.bytes),
+        );
       }
     } catch (error) {
-      await Promise.all(savedPaths.map((savedPath) => removeUploadFile(savedPath)));
-      logEvent(requestId, "failed", { reason: "write_failed", error: describeError(error) });
-      const code = error instanceof UploadStorageError ? error.code : "UPLOAD_FAILED";
-      return jsonError(
-        500,
-        code,
-        "Le serveur n’a pas pu enregistrer les images. Réessayez plus tard.",
+      const cleanupResults = await Promise.allSettled(
+        uploadedImages.map((image) => deleteCloudinaryImage(image.publicId)),
       );
+      const cleanupFailures = cleanupResults.filter((result) => result.status === "rejected").length;
+      if (cleanupFailures > 0) {
+        logEvent(requestId, "cleanup_failed", { count: cleanupFailures });
+      }
+      if (error instanceof CloudinaryUploadError) {
+        logEvent(requestId, "failed", { reason: error.code });
+        return jsonError(error.status, error.code, "تعذّر حفظ الصور في التخزين السحابي. حاولوا مجدداً.");
+      }
+      throw error;
     }
 
-    const imageUrls = validatedFiles.map((file) =>
-      getAbsoluteImageUrl(`${UPLOAD_URL_PREFIX}/${file.filename}`, request.url),
-    );
+    const imageUrls = uploadedImages.map((image) => image.url);
     logEvent(requestId, "success", {
       count: imageUrls.length,
       durationMs: Date.now() - startedAt,
