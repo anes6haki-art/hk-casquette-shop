@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import MetaPixel from "./meta-pixel";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,6 +14,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ar" dir="rtl" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         {children}
+        <MetaPixel />
+        <noscript>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Meta Pixel needs a raw image fallback when JavaScript is disabled. */}
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=1775961124238403&ev=PageView&noscript=1"
+            alt=""
+          />
+        </noscript>
         <a
           href="https://wa.me/213540404661"
           target="_blank"
