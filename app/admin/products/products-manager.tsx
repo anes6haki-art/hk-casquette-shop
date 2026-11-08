@@ -357,7 +357,6 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
               return (
                 <div className="product-variant-editor" key={index}>
                   <div className="product-variant-heading">
-                    <strong>اللون {index + 1}</strong>
                     <button
                       className="product-delete-button"
                       type="button"
@@ -366,9 +365,14 @@ export default function ProductsManager({ products }: { products: ProductDto[] }
                         variants: current.variants.filter((_, variantIndex) => variantIndex !== index),
                       }))}
                       disabled={isPending || isUploading}
+                      aria-label={`حذف اللون ${index + 1}`}
                     >
+                      <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M2.5 4h11M6 4V2.5h4V4m2.5 0-.6 9H4.1l-.6-9M6.5 6.5v4m3-4v4" />
+                      </svg>
                       حذف اللون
                     </button>
+                    <strong>اللون {index + 1}</strong>
                   </div>
                   <div className="product-form-grid">
                     <label className="product-field">

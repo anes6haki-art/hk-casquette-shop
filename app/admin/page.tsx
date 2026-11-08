@@ -125,8 +125,8 @@ export default async function AdminDashboardPage() {
               <p>ستظهر طلبات المتجر الجديدة هنا.</p>
             </div>
           ) : (
-            <div className="admin-table-scroll">
-              <table className="admin-table">
+            <div className="admin-table-scroll admin-orders-table-scroll">
+              <table className="admin-table admin-orders-table">
                 <thead>
                   <tr>
                     <th>العميل</th>
@@ -148,8 +148,8 @@ export default async function AdminDashboardPage() {
                     const status = isOrderStatus(order.status) ? order.status : "PENDING";
                     return (
                       <tr key={order.id}>
-                        <td><strong>{order.name}</strong></td>
-                        <td>
+                        <td data-label="العميل"><strong>{order.name}</strong></td>
+                        <td data-label="المنتج">
                           <strong>{getProductTitleAr(order.productTitle)}</strong>
                           {order.items.length > 0 && (
                             <small className="admin-order-items">
@@ -157,17 +157,17 @@ export default async function AdminDashboardPage() {
                             </small>
                           )}
                         </td>
-                        <td>{order.phone}</td>
-                        <td><strong>{getWilayaLabelAr(order.wilaya)}</strong><small>{getCommuneLabelAr(order.commune, order.wilaya)}</small></td>
-                        <td>{DELIVERY_LABELS[order.deliveryType as DeliveryType] ?? "التوصيل إلى المنزل"}</td>
-                        <td>{order.quantity}</td>
-                        <td className="admin-price">{formatPrice(order.totalPrice)}</td>
-                        <td className="admin-date">{new Intl.DateTimeFormat("ar-DZ", {
+                        <td data-label="الهاتف">{order.phone}</td>
+                        <td data-label="التوصيل"><strong>{getWilayaLabelAr(order.wilaya)}</strong><small>{getCommuneLabelAr(order.commune, order.wilaya)}</small></td>
+                        <td data-label="طريقة التوصيل">{DELIVERY_LABELS[order.deliveryType as DeliveryType] ?? "التوصيل إلى المنزل"}</td>
+                        <td data-label="الكمية">{order.quantity}</td>
+                        <td data-label="الإجمالي" className="admin-price">{formatPrice(order.totalPrice)}</td>
+                        <td data-label="التاريخ" className="admin-date">{new Intl.DateTimeFormat("ar-DZ", {
                           dateStyle: "medium",
                           timeStyle: "short",
                         }).format(order.createdAt)}</td>
-                        <td><span className={`status-badge status-${status.toLowerCase()}`}>{statusLabels[status]}</span></td>
-                                                <td>
+                        <td data-label="الحالة"><span className={`status-badge status-${status.toLowerCase()}`}>{statusLabels[status]}</span></td>
+                        <td data-label="تحديث">
                                                   <form className="admin-status-form" action={updateOrderStatus}>
                                                     <input type="hidden" name="orderId" value={order.id} />
                             <select name="status" defaultValue={status} aria-label={`حالة طلب ${order.name}`}>
@@ -176,7 +176,7 @@ export default async function AdminDashboardPage() {
                             <button type="submit" aria-label={`حفظ حالة ${order.name}`}>حفظ</button>
                           </form>
                         </td>
-                        <td>
+                        <td data-label="شحن DHD">
                           {order.trackingNumber ? (
                             <div className="dhd-tracking">
                               <strong>{order.trackingNumber}</strong>
@@ -188,7 +188,7 @@ export default async function AdminDashboardPage() {
                             <span className="dhd-unavailable">متاح بعد التأكيد</span>
                                                     )}
                         </td>
-                        <td>
+                        <td data-label="حذف">
                                                   <DeleteOrderButton orderId={order.id} />
                                                 </td>
                       </tr>

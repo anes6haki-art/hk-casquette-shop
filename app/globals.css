@@ -2726,8 +2726,44 @@ a {
 }
 
 .product-variant-heading button {
-  padding: 6px 9px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid #f0dfdc;
+  border-radius: 3px;
+  background: #fff;
+  color: #a15349;
   font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.product-variant-heading button:hover:not(:disabled) {
+  border-color: #e6c6c1;
+  background: #fbf0ee;
+}
+
+.product-variant-heading button:focus-visible {
+  outline: 2px solid #a15349;
+  outline-offset: 2px;
+}
+
+.product-variant-heading button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.product-variant-heading button svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
 }
 
 .product-variant-editor .product-form-grid {
@@ -4137,6 +4173,99 @@ html[dir="rtl"] .shop-footer {
 
   .admin-header-right {
     gap: 0;
+  }
+
+  .admin-orders-table-scroll {
+    overflow: visible;
+    padding: 0 12px 12px;
+  }
+
+  .admin-orders-table {
+    display: block;
+    min-width: 0;
+  }
+
+  .admin-orders-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .admin-orders-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .admin-orders-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid #e7eae2;
+    border-radius: 5px;
+    background: #fff;
+  }
+
+  .admin-orders-table td,
+  .admin-orders-table td:first-child {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    padding: 11px 12px;
+    border-top: 1px solid #f0f1ed;
+    color: #626d62;
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-orders-table td::before {
+    content: attr(data-label);
+    color: #858d82;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .admin-orders-table td:nth-child(1),
+  .admin-orders-table td:nth-child(2),
+  .admin-orders-table td:nth-child(11) {
+    grid-column: 1 / -1;
+  }
+
+  .admin-orders-table td > strong {
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-orders-table .admin-order-items {
+    max-width: none;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-orders-table .admin-status-form {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .admin-orders-table .admin-status-form select {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 100px;
+  }
+
+  .admin-orders-table .admin-status-form button {
+    flex: 0 0 auto;
+  }
+
+  .admin-orders-table .dhd-unavailable {
+    line-height: 1.5;
   }
 }
 
