@@ -197,27 +197,35 @@ export async function saveProduct(input: ProductInput): Promise<ProductDto> {
     stockQuantity: input.stockQuantity,
     imageUrls: JSON.stringify(imageUrls),
     isActive: input.isActive,
-        variants: {
-      deleteMany: {},
-      create: variants.map((variant, position) => ({
-        colorName: variant.colorName,
-        colorHex: variant.colorHex,
-        size: variant.size,
-        stock: variant.stock,
-        images: JSON.stringify(variant.images),
-        position,
-      })),
-    },
   };
+  const variantCreates = variants.map((variant, position) => ({
+    colorName: variant.colorName,
+    colorHex: variant.colorHex,
+    size: variant.size,
+    stock: variant.stock,
+    images: JSON.stringify(variant.images),
+    position,
+  }));
 
   const saved = input.id
     ? await prisma.product.update({
       where: { id: input.id },
-      data,
+      data: {
+        ...data,
+        variants: {
+          deleteMany: {},
+          create: variantCreates,
+        },
+      },
       select: productSelect,
     })
     : await prisma.product.create({
-      data,
+      data: {
+        ...data,
+        variants: {
+          create: variantCreates,
+        },
+      },
       select: productSelect,
     });
 
