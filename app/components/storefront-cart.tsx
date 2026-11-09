@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { submitOrder } from "@/app/actions";
-import { trackPurchase } from "@/app/meta-pixel";
+import { trackInitiateCheckout, trackPurchase } from "@/app/meta-pixel";
 import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
   COMMUNES_BY_WILAYA_CODE,
@@ -282,7 +282,11 @@ function CartDrawer({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(order);
-      trackPurchase(savedOrder.id, savedOrder.totalPrice);
+      trackPurchase(
+        savedOrder.id,
+        savedOrder.totalPrice,
+        savedOrder.items.flatMap((item) => item.productId ? [item.productId] : []),
+      );
       setOrderTotal(savedOrder.totalPrice);
       setOrderName(order.name);
       setOrderPhone(order.phone);
@@ -380,7 +384,17 @@ function CartDrawer({
                   <strong>{formatPrice(subtotal)}</strong>
                 </div>
                 <p>تُحسب رسوم التوصيل بعد اختيار الولاية.</p>
-                <button className="storefront-cart-primary" type="button" onClick={() => setStep("checkout")}>
+                <button
+                  className="storefront-cart-primary"
+                  type="button"
+                  onClick={() => {
+                    trackInitiateCheckout(
+                      subtotal,
+                      items.map((item) => item.productId),
+                    );
+                    setStep("checkout");
+                  }}
+                >
                   المتابعة إلى إتمام الطلب <span aria-hidden="true">←</span>
                 </button>
               </footer>

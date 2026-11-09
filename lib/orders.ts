@@ -210,7 +210,13 @@ export async function createOrder(input: NewOrder) {
         totalPrice: subtotal + shippingFee,
         items: { create: orderItems },
       },
-      select: { id: true, shippingFee: true, unitPrice: true, totalPrice: true },
+      select: {
+        id: true,
+        shippingFee: true,
+        unitPrice: true,
+        totalPrice: true,
+        items: { select: { productId: true } },
+      },
     });
   });
 }

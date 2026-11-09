@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
-import { trackPurchase } from "./meta-pixel";
+import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
@@ -61,6 +61,7 @@ export default function OrderForm({
   const [order, setOrder] = useState<OrderConfirmation | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const checkoutTracked = useRef(false);
   const wilayaCode = selectedWilayaCode ? Number(selectedWilayaCode) : null;
   const wilaya = wilayaCode === null ? "" : WILAYAS[wilayaCode - 1] ?? "";
   const selectedShippingRate = shippingRates.find((rate) => rate.wilaya === wilaya);
@@ -117,7 +118,11 @@ export default function OrderForm({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
-      trackPurchase(savedOrder.id, savedOrder.totalPrice);
+      trackPurchase(
+        savedOrder.id,
+        savedOrder.totalPrice,
+        savedOrder.items.flatMap((item) => item.productId ? [item.productId] : []),
+      );
       setOrder({
         name: nextOrder.name,
         phone: formPhone,
@@ -146,7 +151,16 @@ export default function OrderForm({
 
   return (
     <>
-      <form className="order-card product-direct-form" dir="rtl" onSubmit={handleSubmit}>
+      <form
+        className="order-card product-direct-form"
+        dir="rtl"
+        onFocusCapture={() => {
+          if (checkoutTracked.current) return;
+          checkoutTracked.current = true;
+          trackInitiateCheckout(packSubtotal, packItems.map(() => product.id));
+        }}
+        onSubmit={handleSubmit}
+      >
         <label className="field">
           <span>الاسم الكامل</span>
           <input name="name" type="text" placeholder="مثال: أمين بن علي" autoComplete="name" required minLength={3} />
