@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { submitOrder } from "@/app/actions";
+import { trackPurchase } from "@/app/meta-pixel";
 import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
   COMMUNES_BY_WILAYA_CODE,
@@ -281,10 +282,7 @@ function CartDrawer({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(order);
-      window.fbq?.("track", "Purchase", {
-        currency: "DZD",
-        value: savedOrder.totalPrice,
-      });
+      trackPurchase(savedOrder.id, savedOrder.totalPrice);
       setOrderTotal(savedOrder.totalPrice);
       setOrderName(order.name);
       setOrderPhone(order.phone);

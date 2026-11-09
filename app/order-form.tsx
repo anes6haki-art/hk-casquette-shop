@@ -3,6 +3,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
+import { trackPurchase } from "./meta-pixel";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
@@ -116,10 +117,7 @@ export default function OrderForm({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
-      window.fbq?.("track", "Purchase", {
-        currency: "DZD",
-        value: savedOrder.totalPrice,
-      });
+      trackPurchase(savedOrder.id, savedOrder.totalPrice);
       setOrder({
         name: nextOrder.name,
         phone: formPhone,

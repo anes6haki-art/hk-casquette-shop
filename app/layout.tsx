@@ -15,16 +15,58 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ar" dir="rtl" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         {children}
-        <Script id="meta-pixel" strategy="afterInteractive">
-          {`!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
-s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1775961124238403');
-fbq('track', 'PageView');`}
+        <Script id="meta-pixel" strategy="beforeInteractive">
+          {`(function(w,d){
+if(w.__metaPixelBootstrapStarted)return;
+w.__metaPixelBootstrapStarted=true;
+w.__metaPixelReady=false;
+if(!w.fbq){
+  var n=w.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!w._fbq)w._fbq=n;
+  n.push=n;n.loaded=true;n.version='2.0';n.queue=[];
+}
+w.fbq('init','1775961124238403');
+w.fbq('track','PageView');
+var attempts=0,maxAttempts=4;
+function loadPixel(){
+  attempts++;
+  var script=d.createElement('script');
+  var settled=false;
+  var timeout=setTimeout(function(){
+    failLoad('timed out');
+  },10000);
+  function failLoad(reason){
+    if(settled)return;
+    settled=true;
+    clearTimeout(timeout);
+    script.onload=null;
+    script.onerror=null;
+    if(script.parentNode)script.parentNode.removeChild(script);
+    console.error('[Meta Pixel] External script load attempt '+attempts+'/'+maxAttempts+' '+reason+'.');
+    if(attempts<maxAttempts){
+      setTimeout(loadPixel,1000*Math.pow(2,attempts-1));
+    }else{
+      w.__metaPixelLoadFailed=true;
+      w.dispatchEvent(new Event('meta-pixel-load-failed'));
+    }
+  }
+  script.async=true;
+  script.src='https://connect.facebook.net/en_US/fbevents.js';
+  script.onload=function(){
+    if(settled)return;
+    settled=true;
+    clearTimeout(timeout);
+    w.__metaPixelReady=true;
+    w.__metaPixelLoadFailed=false;
+    w.dispatchEvent(new Event('meta-pixel-ready'));
+  };
+  script.onerror=function(){failLoad('failed');};
+  var first=d.getElementsByTagName('script')[0];
+  if(first&&first.parentNode)first.parentNode.insertBefore(script,first);
+  else d.head.appendChild(script);
+}
+loadPixel();
+})(window,document);`}
         </Script>
         <MetaPixel />
         <noscript>
