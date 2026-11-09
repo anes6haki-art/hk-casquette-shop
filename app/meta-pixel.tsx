@@ -46,6 +46,24 @@ function markPurchaseTracked(orderId: string) {
   }
 }
 
+export function claimPurchaseTracking(orderId: string) {
+  if (typeof window === "undefined" || !orderId || hasTrackedPurchase(orderId)) {
+    return false;
+  }
+
+  markPurchaseTracked(orderId);
+  return true;
+}
+
+export function releasePurchaseTracking(orderId: string) {
+  trackedPurchases.delete(orderId);
+  try {
+    window.localStorage.removeItem(getPurchaseStorageKey(orderId));
+  } catch (error) {
+    logPixelError(`Could not clear Purchase deduplication state for order ${orderId}.`, error);
+  }
+}
+
 export function trackInitiateCheckout(value: number, productIds: string[]) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") {
     logPixelError("InitiateCheckout could not be dispatched because the Pixel is unavailable.");
@@ -82,10 +100,7 @@ export function trackPurchase(orderId: string, value: number, productIds: string
     return;
   }
 
-  const contentIds = [...new Set(productIds)];
-  if (hasTrackedPurchase(orderId)) return;
-
-  markPurchaseTracked(orderId);
+  if (!claimPurchaseTracking(orderId)) return;
   try {
     window.fbq(
       "track",
@@ -94,17 +109,12 @@ export function trackPurchase(orderId: string, value: number, productIds: string
         value,
         currency: "DZD",
         content_type: "product",
-        content_ids: contentIds,
+        content_ids: [...new Set(productIds)],
       },
       { eventID: orderId },
     );
   } catch (error) {
-    trackedPurchases.delete(orderId);
-    try {
-      window.localStorage.removeItem(getPurchaseStorageKey(orderId));
-    } catch (storageError) {
-      logPixelError(`Could not clear Purchase deduplication state for order ${orderId}.`, storageError);
-    }
+    releasePurchaseTracking(orderId);
     logPixelError(`Purchase dispatch failed for order ${orderId}.`, error);
   }
 }

@@ -3,7 +3,11 @@
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
-import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
+import {
+  claimPurchaseTracking,
+  releasePurchaseTracking,
+  trackInitiateCheckout,
+} from "./meta-pixel";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
@@ -118,11 +122,32 @@ export default function OrderForm({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
-      trackPurchase(
-        savedOrder.id,
-        savedOrder.totalPrice,
+      const contentIds = [...new Set(
         savedOrder.items.flatMap((item) => item.productId ? [item.productId] : []),
-      );
+      )];
+      if (contentIds.length > 0 && claimPurchaseTracking(savedOrder.id)) {
+        try {
+          if (typeof window.fbq !== "function") {
+            releasePurchaseTracking(savedOrder.id);
+            console.error("[Meta Pixel] Purchase could not be dispatched because the Pixel is unavailable.");
+          } else {
+            window.fbq(
+              "track",
+              "Purchase",
+              {
+                value: savedOrder.totalPrice,
+                currency: "DZD",
+                content_type: "product",
+                content_ids: contentIds,
+              },
+              { eventID: savedOrder.id },
+            );
+          }
+        } catch (error) {
+          releasePurchaseTracking(savedOrder.id);
+          console.error(`[Meta Pixel] Purchase dispatch failed for order ${savedOrder.id}.`, error);
+        }
+      }
       setOrder({
         name: nextOrder.name,
         phone: formPhone,
