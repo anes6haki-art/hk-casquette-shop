@@ -75,13 +75,6 @@ export default function OrderForm({
   const packSubtotal = getOfferPackPrice(product.discountedPrice, packSize);
   const total = packSubtotal + shippingFee;
 
-  function getColorStock(color: string) {
-    if (product.variants.length === 0) return product.stockQuantity;
-    return product.variants
-      .filter((variant) => variant.colorName === color)
-      .reduce((stock, variant) => stock + variant.stock, 0);
-  }
-
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
@@ -93,13 +86,82 @@ export default function OrderForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+    if (isSubmitting) return;
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const name = String(formData.get("name") ?? "").trim();
     const formPhone = String(formData.get("phone") ?? "");
+    const formCommune = String(formData.get("commune") ?? "");
+    const validPhone = /^(0[5-7][0-9]{8}|[5-7][0-9]{8})$/.test(formPhone);
+    const wilayaIndex = Number(selectedWilayaCode) - 1;
+    const selectedWilaya = Number.isInteger(wilayaIndex) ? WILAYAS[wilayaIndex] : undefined;
+    const validCommunes = selectedWilayaCode
+      ? communesData[selectedWilayaCode] ?? []
+      : [];
+    let validationError: string | null = null;
+    let fieldToFocus: string | null = null;
+
+    if (name.length < 3) {
+      validationError = "أدخلوا الاسم الكامل (ثلاثة أحرف على الأقل).";
+      fieldToFocus = "name";
+    } else if (!validPhone) {
+      validationError = "أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456).";
+      fieldToFocus = "phone";
+    } else if (!selectedWilaya || selectedWilaya !== wilaya) {
+      validationError = "اختاروا الولاية قبل تأكيد الطلب.";
+      fieldToFocus = "wilaya";
+    } else if (!formCommune || !validCommunes.includes(formCommune)) {
+      validationError = "اختاروا البلدية التابعة للولاية المحددة.";
+      fieldToFocus = "commune";
+    } else if (!selectedShippingRate) {
+      validationError = "تعذر تحديد رسوم التوصيل لهذه الولاية. اختاروا ولاية أخرى أو تواصلوا معنا.";
+      fieldToFocus = "wilaya";
+    } else if (![1, 2, 3].includes(packSize) || packItems.length !== packSize) {
+      validationError = "تحققوا من عدد القطع المحددة في الباقة.";
+    } else if (product.stockQuantity < packSize) {
+      validationError = "الكمية المطلوبة غير متوفرة حالياً. عدّلوا عدد القطع في الباقة.";
+    } else {
+      const selectedSizes = new Set(["Standard", "S", "M", "L"]);
+      const requestedByVariant = new Map<string, number>();
+      const selectionsAreValid = packItems.every((item) => {
+        if (!item.color || !selectedSizes.has(item.size)) return false;
+        if (product.variants.length === 0) {
+          return item.color === "Standard" && product.stockQuantity >= packSize;
+        }
+
+        const variant = product.variants.find(
+          (candidate) =>
+            candidate.colorName === item.color
+            && candidate.size === item.size
+            && candidate.stock > 0,
+        );
+        if (!variant) return false;
+
+        const requestedQuantity = (requestedByVariant.get(variant.id) ?? 0) + 1;
+        requestedByVariant.set(variant.id, requestedQuantity);
+        return requestedQuantity <= variant.stock;
+      });
+
+      if (!selectionsAreValid) {
+        validationError = "اختاروا لوناً ومقاساً متاحين لكل قطعة في الباقة.";
+      }
+    }
+
+    if (validationError) {
+      setSubmissionError(validationError);
+      if (fieldToFocus) {
+        form.querySelector<HTMLElement>(`[name="${fieldToFocus}"]`)?.focus();
+      }
+      return;
+    }
+
+    setSubmissionError(null);
     const nextOrder = {
-      name: String(formData.get("name") ?? ""),
+      name,
       phone: formPhone,
       wilaya,
-      commune: String(formData.get("commune") ?? ""),
+      commune: formCommune,
       notes: String(formData.get("notes") ?? "").trim(),
       offerPack: true,
       items: packItems.map((item) => {
@@ -179,11 +241,14 @@ export default function OrderForm({
       <form
         className="order-card product-direct-form"
         dir="rtl"
+        aria-describedby={submissionError ? "order-form-error" : undefined}
+        noValidate
         onFocusCapture={() => {
           if (checkoutTracked.current) return;
           checkoutTracked.current = true;
           trackInitiateCheckout(packSubtotal, packItems.map(() => product.id));
         }}
+        onChange={() => setSubmissionError(null)}
         onSubmit={handleSubmit}
       >
         <label className="field">
@@ -265,11 +330,15 @@ export default function OrderForm({
           <div className="price-total"><strong>المبلغ الإجمالي</strong><strong>{formatPrice(selectedShippingRate ? total : packSubtotal)}</strong></div>
         </div>
 
-        {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
+        {submissionError && (
+          <p id="order-form-error" className="form-error" role="alert" aria-live="assertive">
+            {submissionError}
+          </p>
+        )}
         <button
           className="submit-button"
           type="submit"
-          disabled={isSubmitting || !selectedShippingRate || packItems.some((item) => getColorStock(item.color) < 1)}
+          disabled={isSubmitting}
         >
           {isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
         </button>
