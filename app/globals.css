@@ -591,7 +591,8 @@ a {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   width: 100%;
   height: 43px;
   padding: 0 12px;
@@ -604,12 +605,20 @@ a {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.field textarea {
+  height: auto;
+  min-height: 78px;
+  resize: vertical;
+  padding-top: 10px;
+}
+
 .field input::placeholder {
   color: #a0a69d;
 }
 
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   border-color: #91a678;
   box-shadow: 0 0 0 3px rgb(145 166 120 / 13%);
 }
@@ -5268,6 +5277,7 @@ html[dir="rtl"] .shop-footer {
 
 .product-page .field input,
 .product-page .field select,
+.product-page .field textarea,
 .product-page .phone-input {
   border-color: #3f3f46;
   border-radius: 8px;
@@ -5285,6 +5295,7 @@ html[dir="rtl"] .shop-footer {
 
 .product-page .field input:focus,
 .product-page .field select:focus,
+.product-page .field textarea:focus,
 .product-page .phone-input:focus-within {
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgb(245 158 11 / 14%);
@@ -6191,7 +6202,8 @@ html[dir="rtl"] .shop-footer {
 }
 
 .storefront-checkout-form input,
-.storefront-checkout-form select {
+.storefront-checkout-form select,
+.storefront-checkout-form textarea {
   width: 100%;
   min-height: 43px;
   padding: 0 11px;
@@ -6205,9 +6217,16 @@ html[dir="rtl"] .shop-footer {
 }
 
 .storefront-checkout-form input:focus,
-.storefront-checkout-form select:focus {
+.storefront-checkout-form select:focus,
+.storefront-checkout-form textarea:focus {
   border-color: #ef4444;
   box-shadow: 0 0 0 2px rgb(239 68 68 / 17%);
+}
+
+.storefront-checkout-form textarea {
+  min-height: 78px;
+  padding: 10px 11px;
+  resize: vertical;
 }
 
 .storefront-checkout-form select:disabled {

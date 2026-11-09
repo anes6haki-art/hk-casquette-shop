@@ -147,6 +147,7 @@ export type NewOrder = {
   phone: string;
   wilaya: string;
   commune: string;
+  notes?: string;
   items: NewOrderItem[];
   deliveryType: DeliveryType;
 };

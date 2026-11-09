@@ -89,13 +89,14 @@ export default function OrderForm({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const formPhone = String(formData.get("phone") ?? "");
-        const nextOrder = {
+    const nextOrder = {
       name: String(formData.get("name") ?? ""),
       phone: formPhone,
       wilaya,
       commune: String(formData.get("commune") ?? ""),
+      notes: String(formData.get("notes") ?? "").trim(),
       offerPack: true,
-            items: packItems.map((item) => {
+      items: packItems.map((item) => {
         const variant = product.variants.find((candidate) =>
           candidate.colorName === item.color && candidate.size === item.size && candidate.stock > 0,
         );
@@ -115,7 +116,11 @@ export default function OrderForm({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
-            setOrder({
+      window.fbq?.("track", "Purchase", {
+        currency: "DZD",
+        value: savedOrder.totalPrice,
+      });
+      setOrder({
         name: nextOrder.name,
         phone: formPhone,
         wilaya,
@@ -206,19 +211,24 @@ export default function OrderForm({
           </select>
         </label>
 
-                <div className="price-breakdown" aria-live="polite">
-                  <div className="order-line-summary">
-                    <span>{packSize} × {getProductTitleAr(product.title)} · مجموعة</span>
-                    <span>{formatPrice(packSubtotal)}</span>
-                  </div>
-                  <div>
+        <label className="field">
+          <span>ملاحظات إضافية (اختياري)</span>
+          <textarea name="notes" maxLength={1000} rows={3} />
+        </label>
+
+        <div className="price-breakdown" aria-live="polite">
+          <div className="order-line-summary">
+            <span>{packSize} × {getProductTitleAr(product.title)} · مجموعة</span>
+            <span>{formatPrice(packSubtotal)}</span>
+          </div>
+          <div>
             <span>التوصيل · {DELIVERY_LABELS[deliveryType]}</span>
             <span>{selectedShippingRate ? formatPrice(shippingFee) : "اختاروا الولاية"}</span>
           </div>
           <div className="price-total"><strong>المبلغ الإجمالي</strong><strong>{formatPrice(selectedShippingRate ? total : packSubtotal)}</strong></div>
         </div>
 
-                {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
+        {submissionError && <p className="form-error" role="alert">{submissionError}</p>}
         <button
           className="submit-button"
           type="submit"
@@ -247,7 +257,7 @@ export default function OrderForm({
             <div className="summary-box">
               <div className="summary-items">
                 <span>المنتجات</span>
-                                <strong>
+                <strong>
                   {packSize} × {getProductTitleAr(product.title)} · مجموعة
                 </strong>
               </div>

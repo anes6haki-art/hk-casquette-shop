@@ -133,6 +133,7 @@ export default async function AdminDashboardPage() {
                     <th>المنتج</th>
                     <th>الهاتف</th>
                     <th>التوصيل</th>
+                    <th>ملاحظات</th>
                     <th>طريقة التوصيل</th>
                     <th>الكمية</th>
                     <th>الإجمالي</th>
@@ -159,6 +160,7 @@ export default async function AdminDashboardPage() {
                         </td>
                         <td data-label="الهاتف">{order.phone}</td>
                         <td data-label="التوصيل"><strong>{getWilayaLabelAr(order.wilaya)}</strong><small>{getCommuneLabelAr(order.commune, order.wilaya)}</small></td>
+                        <td data-label="ملاحظات"><small className="admin-order-items">{order.notes || "—"}</small></td>
                         <td data-label="طريقة التوصيل">{DELIVERY_LABELS[order.deliveryType as DeliveryType] ?? "التوصيل إلى المنزل"}</td>
                         <td data-label="الكمية">{order.quantity}</td>
                         <td data-label="الإجمالي" className="admin-price">{formatPrice(order.totalPrice)}</td>

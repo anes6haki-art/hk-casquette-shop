@@ -258,6 +258,7 @@ function CartDrawer({
       wilaya,
       commune,
       deliveryType,
+      notes: String(formData.get("notes") ?? "").trim(),
       offerPack: false,
       items: items.map((item) => {
         const product = products.find((candidate) => candidate.id === item.productId);
@@ -280,6 +281,10 @@ function CartDrawer({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(order);
+      window.fbq?.("track", "Purchase", {
+        currency: "DZD",
+        value: savedOrder.totalPrice,
+      });
       setOrderTotal(savedOrder.totalPrice);
       setOrderName(order.name);
       setOrderPhone(order.phone);
@@ -506,6 +511,10 @@ function CartDrawer({
                 <option value="HOME">إلى المنزل</option>
                 <option value="DESK">إلى المكتب</option>
               </select>
+            </label>
+            <label>
+              <span>ملاحظات إضافية (اختياري)</span>
+              <textarea name="notes" maxLength={1000} rows={3} />
             </label>
             <div className="storefront-checkout-total" aria-live="polite">
               <span>المجموع الفرعي</span><strong>{formatPrice(subtotal)}</strong>

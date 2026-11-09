@@ -23,6 +23,7 @@ export async function createOrder(input: NewOrder) {
     typeof input.phone !== "string" ||
     typeof input.wilaya !== "string" ||
     typeof input.commune !== "string" ||
+    (input.notes !== undefined && typeof input.notes !== "string") ||
     typeof input.deliveryType !== "string" ||
     !Array.isArray(input.items) ||
     input.items.length < 1 ||
@@ -39,9 +40,13 @@ export async function createOrder(input: NewOrder) {
     phone = phone.slice(1);
   }
   const commune = input.commune.trim();
+  const notes = input.notes?.trim() ?? "";
 
   if (name.length < 3 || name.length > 120) {
     throw new Error("يرجى إدخال الاسم الكامل بشكل صحيح.");
+  }
+  if (notes.length > 1000) {
+    throw new Error("يجب ألا تتجاوز الملاحظات 1000 حرفاً.");
   }
   if (!/^[5-7]\d{8}$/.test(phone)) {
     throw new Error("يرجى إدخال رقم هاتف جزائري صالح.");
@@ -197,6 +202,7 @@ export async function createOrder(input: NewOrder) {
         productTitle: orderProductTitle,
         wilaya: input.wilaya,
         commune,
+        notes: notes || null,
         quantity: totalQuantity,
         unitPrice,
         shippingFee,
@@ -223,6 +229,7 @@ export async function getOrdersForAdmin() {
       phone: true,
       wilaya: true,
       commune: true,
+      notes: true,
       deliveryType: true,
       quantity: true,
       totalPrice: true,
