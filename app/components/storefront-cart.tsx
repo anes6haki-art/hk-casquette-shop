@@ -4,6 +4,7 @@ import Image from "next/image";
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type FormEvent,
   type ReactNode,
@@ -224,9 +225,7 @@ function CartDrawer({
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("HOME");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderTotal, setOrderTotal] = useState(0);
-  const [orderName, setOrderName] = useState("");
-  const [orderPhone, setOrderPhone] = useState("");
+  const [order, setOrder] = useState<{ id: string; price: number; name: string; phone: string } | null>(null);
   const wilaya = wilayaCode ? WILAYAS[Number(wilayaCode) - 1] ?? "" : "";
   const shippingRate = shippingRates.find((rate) => rate.wilaya === wilaya);
   const shippingFee = shippingRate
@@ -248,6 +247,11 @@ function CartDrawer({
     );
   });
   const communes = wilayaCode ? COMMUNES_BY_WILAYA_CODE[wilayaCode] ?? [] : [];
+
+  useEffect(() => {
+    if (!order) return;
+    trackPurchase(order.id, order.price);
+  }, [order]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -282,14 +286,12 @@ function CartDrawer({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(order);
-      trackPurchase(
-        savedOrder.id,
-        savedOrder.totalPrice,
-        savedOrder.items.flatMap((item) => item.productId ? [item.productId] : []),
-      );
-      setOrderTotal(savedOrder.totalPrice);
-      setOrderName(order.name);
-      setOrderPhone(order.phone);
+      setOrder({
+        id: savedOrder.id,
+        price: savedOrder.totalPrice,
+        name: order.name,
+        phone: order.phone,
+      });
       onClear();
       setStep("success");
     } catch (submitError) {
@@ -551,10 +553,10 @@ function CartDrawer({
         {step === "success" && (
           <div className="storefront-cart-success">
             <span className="storefront-success-mark" aria-hidden="true">✓</span>
-            <p>شكراً لثقتكم يا {orderName.split(" ")[0]}.</p>
+            <p>شكراً لثقتكم يا {order?.name.split(" ")[0]}.</p>
             <h3>تم استلام طلبكم بنجاح</h3>
-            <p>سنتصل بكم على الرقم <strong dir="ltr">{orderPhone}</strong> لتأكيد التوصيل.</p>
-            <div><span>المبلغ عند الاستلام</span><strong>{formatPrice(orderTotal)}</strong></div>
+            <p>سنتصل بكم على الرقم <strong dir="ltr">{order?.phone}</strong> لتأكيد التوصيل.</p>
+            <div><span>المبلغ عند الاستلام</span><strong>{formatPrice(order?.price ?? 0)}</strong></div>
             <button className="storefront-cart-primary" type="button" onClick={onClose}>مواصلة التسوق</button>
           </div>
         )}

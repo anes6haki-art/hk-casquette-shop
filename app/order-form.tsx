@@ -1,13 +1,9 @@
 
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
-import {
-  claimPurchaseTracking,
-  releasePurchaseTracking,
-  trackInitiateCheckout,
-} from "./meta-pixel";
+import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
@@ -38,13 +34,14 @@ function normalizeWilayaCode(value: string): number | null {
 }
 
 type OrderConfirmation = {
+  id: string;
+  price: number;
   name: string;
   phone: string;
   wilaya: string;
   commune: string;
   deliveryType: DeliveryType;
   shippingFee: number;
-  totalPrice: number;
   items: { productId: string; color: string; size: string; quantity: number; variantId?: string }[];
 };
 
@@ -76,6 +73,11 @@ export default function OrderForm({
   const total = packSubtotal + shippingFee;
 
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
+
+  useEffect(() => {
+    if (!order) return;
+    trackPurchase(order.id, order.price);
+  }, [order]);
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
     const code = normalizeWilayaCode(event.currentTarget.value);
@@ -184,40 +186,15 @@ export default function OrderForm({
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
-      const contentIds = [...new Set(
-        savedOrder.items.flatMap((item) => item.productId ? [item.productId] : []),
-      )];
-      if (contentIds.length > 0 && claimPurchaseTracking(savedOrder.id)) {
-        try {
-          if (typeof window.fbq !== "function") {
-            releasePurchaseTracking(savedOrder.id);
-            console.error("[Meta Pixel] Purchase could not be dispatched because the Pixel is unavailable.");
-          } else {
-            window.fbq(
-              "track",
-              "Purchase",
-              {
-                value: savedOrder.totalPrice,
-                currency: "DZD",
-                content_type: "product",
-                content_ids: contentIds,
-              },
-              { eventID: savedOrder.id },
-            );
-          }
-        } catch (error) {
-          releasePurchaseTracking(savedOrder.id);
-          console.error(`[Meta Pixel] Purchase dispatch failed for order ${savedOrder.id}.`, error);
-        }
-      }
       setOrder({
+        id: savedOrder.id,
+        price: savedOrder.totalPrice,
         name: nextOrder.name,
         phone: formPhone,
         wilaya,
         commune: nextOrder.commune,
         deliveryType,
         shippingFee: savedOrder.shippingFee,
-        totalPrice: savedOrder.totalPrice,
         items: packItems.map((it) => {
           const variant = product.variants.find((variant) =>
             variant.colorName === it.color && variant.size === it.size && variant.stock > 0,
@@ -369,7 +346,7 @@ export default function OrderForm({
               </div>
               <div><span>التوصيل</span><strong>{DELIVERY_LABELS[order.deliveryType]} · {getCommuneLabelAr(order.commune, order.wilaya)}، {getWilayaLabelAr(order.wilaya)}</strong></div>
               <div><span>رسوم التوصيل</span><strong>{formatPrice(order.shippingFee)}</strong></div>
-              <div><span>المبلغ عند الاستلام</span><strong>{formatPrice(order.totalPrice)}</strong></div>
+              <div><span>المبلغ عند الاستلام</span><strong>{formatPrice(order.price)}</strong></div>
             </div>
             <button className="submit-button" type="button" onClick={() => setOrder(null)}>مواصلة التسوق</button>
           </section>

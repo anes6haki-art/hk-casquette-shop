@@ -86,12 +86,12 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   }
 }
 
-export function trackPurchase(orderId: string, value: number, productIds: string[]) {
+export function trackPurchase(orderId: string, value: number) {
   if (typeof window === "undefined") {
     logPixelError("Purchase tracking was called outside the browser.");
     return;
   }
-  if (!orderId || !Number.isFinite(value) || productIds.length === 0) {
+  if (!orderId || !Number.isFinite(value)) {
     logPixelError("Skipped a Purchase event with invalid order data.");
     return;
   }
@@ -108,10 +108,8 @@ export function trackPurchase(orderId: string, value: number, productIds: string
       {
         value,
         currency: "DZD",
-        content_type: "product",
-        content_ids: [...new Set(productIds)],
       },
-      { eventID: orderId },
+      { eventID: String(orderId) },
     );
   } catch (error) {
     releasePurchaseTracking(orderId);
