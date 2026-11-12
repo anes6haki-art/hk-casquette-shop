@@ -25,7 +25,10 @@ if(!w.fbq){
   if(!w._fbq)w._fbq=n;
   n.push=n;n.loaded=true;n.version='2.0';n.queue=[];
 }
-w.fbq('init','1775961124238403');
+if(!w.__fbPixelInitialized){
+  w.__fbPixelInitialized=true;
+  w.fbq('init','1775961124238403');
+}
 w.fbq('track','PageView');
 var attempts=0,maxAttempts=4;
 function loadPixel(){
