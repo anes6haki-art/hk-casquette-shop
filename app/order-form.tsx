@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
 import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
 import {
@@ -63,6 +63,8 @@ export default function OrderForm({
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const checkoutTracked = useRef(false);
+  const isSubmittingRef = useRef(false);
+  const hasSentPurchase = useRef(false);
   const wilayaCode = selectedWilayaCode ? Number(selectedWilayaCode) : null;
   const wilaya = wilayaCode === null ? "" : WILAYAS[wilayaCode - 1] ?? "";
   const selectedShippingRate = shippingRates.find((rate) => rate.wilaya === wilaya);
@@ -74,11 +76,6 @@ export default function OrderForm({
 
   const availableCommunes = selectedWilayaCode ? communesData[selectedWilayaCode] || [] : [];
 
-  useEffect(() => {
-    if (!order) return;
-    trackPurchase(order);
-  }, [order]);
-
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {
     const code = normalizeWilayaCode(event.currentTarget.value);
     setSelectedWilayaCode(code ? String(code) : "");
@@ -88,7 +85,7 @@ export default function OrderForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmittingRef.current) return;
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -183,9 +180,15 @@ export default function OrderForm({
     };
 
     setSubmissionError(null);
+    isSubmittingRef.current = true;
+    hasSentPurchase.current = false;
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(nextOrder);
+      if (!hasSentPurchase.current) {
+        hasSentPurchase.current = true;
+        trackPurchase({ id: savedOrder.id, price: savedOrder.totalPrice });
+      }
       setOrder({
         id: savedOrder.id,
         price: savedOrder.totalPrice,
@@ -209,6 +212,7 @@ export default function OrderForm({
           : "تعذر تسجيل طلبكم. تحققوا من المعلومات وحاولوا مجدداً.",
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   }

@@ -4,7 +4,7 @@ import Image from "next/image";
 import {
   createContext,
   useContext,
-  useEffect,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -226,6 +226,8 @@ function CartDrawer({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [order, setOrder] = useState<{ id: string; price: number; name: string; phone: string } | null>(null);
+  const isSubmittingRef = useRef(false);
+  const hasSentPurchase = useRef(false);
   const wilaya = wilayaCode ? WILAYAS[Number(wilayaCode) - 1] ?? "" : "";
   const shippingRate = shippingRates.find((rate) => rate.wilaya === wilaya);
   const shippingFee = shippingRate
@@ -248,13 +250,9 @@ function CartDrawer({
   });
   const communes = wilayaCode ? COMMUNES_BY_WILAYA_CODE[wilayaCode] ?? [] : [];
 
-  useEffect(() => {
-    if (!order) return;
-    trackPurchase(order);
-  }, [order]);
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmittingRef.current) return;
     setError(null);
     const formData = new FormData(event.currentTarget);
     const order: NewOrder = {
@@ -283,9 +281,14 @@ function CartDrawer({
       }),
     };
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     try {
       const savedOrder = await submitOrder(order);
+      if (!hasSentPurchase.current) {
+        hasSentPurchase.current = true;
+        trackPurchase({ id: savedOrder.id, price: savedOrder.totalPrice });
+      }
       setOrder({
         id: savedOrder.id,
         price: savedOrder.totalPrice,
@@ -301,6 +304,7 @@ function CartDrawer({
           : "تعذر تسجيل الطلب. تحققوا من المعلومات وحاولوا مجدداً.",
       );
     } finally {
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   }
