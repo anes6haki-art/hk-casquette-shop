@@ -287,7 +287,7 @@ function CartDrawer({
       const savedOrder = await submitOrder(order);
       if (!hasSentPurchase.current) {
         hasSentPurchase.current = true;
-        trackPurchase({ id: savedOrder.id, price: savedOrder.totalPrice });
+        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
       }
       setOrder({
         id: savedOrder.id,

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 const PURCHASE_STORAGE_PREFIX = "meta-pixel-purchase-sent:";
+const ORDER_CURRENCY = "DZD";
 const firedPurchases = new Set<string>();
 
 declare global {
@@ -36,7 +37,7 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   try {
     window.fbq("track", "InitiateCheckout", {
       value,
-      currency: "DZD",
+      currency: ORDER_CURRENCY,
       content_type: "product",
       content_ids: [...new Set(productIds)],
     });
@@ -45,15 +46,15 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   }
 }
 
-export function trackPurchase(order: { id: string; price: number }) {
+export function trackPurchase(order: { id: string; totalPrice: number }) {
   const eventID = String(order.id);
-  const value = order.price;
+  const value = order.totalPrice;
 
   if (typeof window === "undefined") {
     logPixelError("Purchase tracking was called outside the browser.");
     return;
   }
-  if (!eventID || !Number.isFinite(value)) {
+  if (!eventID || !Number.isSafeInteger(value) || value <= 0) {
     logPixelError("Skipped a Purchase event with invalid order data.");
     return;
   }
@@ -87,7 +88,7 @@ export function trackPurchase(order: { id: string; price: number }) {
       "Purchase",
       {
         value,
-        currency: "DZD",
+        currency: ORDER_CURRENCY,
       },
       { eventID },
     );

@@ -187,7 +187,7 @@ export default function OrderForm({
       const savedOrder = await submitOrder(nextOrder);
       if (!hasSentPurchase.current) {
         hasSentPurchase.current = true;
-        trackPurchase({ id: savedOrder.id, price: savedOrder.totalPrice });
+        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
       }
       setOrder({
         id: savedOrder.id,
