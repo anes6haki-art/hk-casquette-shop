@@ -76,7 +76,7 @@ export default function OrderForm({
 
   useEffect(() => {
     if (!order) return;
-    trackPurchase(order.id, order.price);
+    trackPurchase(order);
   }, [order]);
 
   function handleWilayaChange(event: ChangeEvent<HTMLSelectElement>) {

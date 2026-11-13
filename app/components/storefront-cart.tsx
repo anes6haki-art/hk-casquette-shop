@@ -250,7 +250,7 @@ function CartDrawer({
 
   useEffect(() => {
     if (!order) return;
-    trackPurchase(order.id, order.price);
+    trackPurchase(order);
   }, [order]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

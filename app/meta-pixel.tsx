@@ -45,36 +45,39 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   }
 }
 
-export function trackPurchase(orderId: string, value: number) {
+export function trackPurchase(order: { id: string; price: number }) {
+  const eventID = String(order.id);
+  const value = order.price;
+
   if (typeof window === "undefined") {
     logPixelError("Purchase tracking was called outside the browser.");
     return;
   }
-  if (!orderId || !Number.isFinite(value)) {
+  if (!eventID || !Number.isFinite(value)) {
     logPixelError("Skipped a Purchase event with invalid order data.");
     return;
   }
   if (typeof window.fbq !== "function") {
-    logPixelError(`Purchase for order ${orderId} could not be dispatched because the Pixel is unavailable.`);
+    logPixelError(`Purchase for order ${eventID} could not be dispatched because the Pixel is unavailable.`);
     return;
   }
 
-  const storageKey = getPurchaseStorageKey(orderId);
-  if (firedPurchases.has(orderId)) return;
+  const storageKey = getPurchaseStorageKey(eventID);
+  if (firedPurchases.has(eventID)) return;
   try {
     if (window.localStorage.getItem(storageKey) === "sent") {
-      firedPurchases.add(orderId);
+      firedPurchases.add(eventID);
       return;
     }
   } catch (error) {
-    logPixelError(`Could not read Purchase deduplication state for order ${orderId}.`, error);
+    logPixelError(`Could not read Purchase deduplication state for order ${eventID}.`, error);
   }
 
-  firedPurchases.add(orderId);
+  firedPurchases.add(eventID);
   try {
     window.localStorage.setItem(storageKey, "sent");
   } catch (error) {
-    logPixelError(`Could not persist Purchase deduplication state for order ${orderId}.`, error);
+    logPixelError(`Could not persist Purchase deduplication state for order ${eventID}.`, error);
   }
 
   console.trace("Purchase Pixel Fired");
@@ -86,10 +89,10 @@ export function trackPurchase(orderId: string, value: number) {
         value,
         currency: "DZD",
       },
-      { eventID: String(orderId) },
+      { eventID },
     );
   } catch (error) {
-    logPixelError(`Purchase dispatch failed for order ${orderId}.`, error);
+    logPixelError(`Purchase dispatch failed for order ${eventID}.`, error);
   }
 }
 
