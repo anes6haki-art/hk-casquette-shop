@@ -48,6 +48,10 @@ The home page lists every active casquette. Each product has a detail page with 
 
 The `/admin/products` page lets administrators create, edit, activate, and delete casquettes. Images can be uploaded directly from the product form (JPEG, PNG, WebP, or AVIF; up to 12 MB per image and 8 images per product) and are stored in Cloudinary; the form also accepts existing HTTP(S) image URLs. Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in the server environment. New uploads use signed server-side requests and return Cloudinary HTTPS URLs. Every active product appears in the storefront catalog. Checkout uses its discounted price and decrements stock when an order is saved.
 
+### Meta Purchase tracking
+
+The browser Pixel and server Conversions API send a Purchase only after an order is saved. Both use the saved order ID as the deduplication event ID, the saved final total (including its already-calculated delivery fee), and `DZD`. Configure `META_CONVERSIONS_API_ACCESS_TOKEN` as a server-only secret to enable Conversions API delivery; missing configuration or API failures are logged without undoing a saved order.
+
 ### DHD delivery
 
 Confirmed orders can be submitted to the DHD endpoint from the dashboard. Set `DHD_API_KEY`, `DHD_API_SECRET`, and `DHD_API_URL` in the server environment. The adapter sends the key and secret as `X-API-Key` and `X-API-Secret` headers, posts the order reference, recipient, and cash-on-delivery parcel details as JSON, and expects `trackingNumber` (or `tracking_number`) in the response. The returned tracking number and delivery status are saved on the order. Match the endpoint, authentication headers, request fields, and response mapping to the API documentation supplied with your DHD account before enabling live shipments. Without credentials, the route responds with `Clé API DHD non configurée`.

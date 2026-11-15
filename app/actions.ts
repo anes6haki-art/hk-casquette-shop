@@ -1,11 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createOrder } from "@/lib/orders";
+import { sendPurchaseToConversionsApi } from "@/lib/meta-conversions-api";
 import type { NewOrder } from "@/lib/store-data";
 
 export async function submitOrder(input: NewOrder) {
   const order = await createOrder(input);
+  let eventSourceUrl: string | null = null;
+  try {
+    const requestHeaders = await headers();
+    eventSourceUrl = requestHeaders.get("referer") ?? requestHeaders.get("origin");
+  } catch (error) {
+    console.error(`[Meta CAPI] Could not read request URL for saved order ${order.id}.`, error);
+  }
+  await sendPurchaseToConversionsApi(order, input.phone, eventSourceUrl);
+
   try {
     revalidatePath("/admin");
     revalidatePath("/admin/products");

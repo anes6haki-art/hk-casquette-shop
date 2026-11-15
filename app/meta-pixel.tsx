@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { createPurchaseEvent } from "../lib/meta-purchase";
 
 const PURCHASE_STORAGE_PREFIX = "meta-pixel-purchase-sent:";
 const ORDER_CURRENCY = "DZD";
@@ -47,54 +48,49 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
 }
 
 export function trackPurchase(order: { id: string; totalPrice: number }) {
-  const eventID = String(order.id);
-  const value = order.totalPrice;
+  const event = createPurchaseEvent(order);
 
   if (typeof window === "undefined") {
     logPixelError("Purchase tracking was called outside the browser.");
     return;
   }
-  if (!eventID || !Number.isSafeInteger(value) || value <= 0) {
+  if (!event.event_id || !Number.isSafeInteger(event.value) || event.value <= 0) {
     logPixelError("Skipped a Purchase event with invalid order data.");
     return;
   }
   if (typeof window.fbq !== "function") {
-    logPixelError(`Purchase for order ${eventID} could not be dispatched because the Pixel is unavailable.`);
+    logPixelError(`Purchase for order ${event.event_id} could not be dispatched because the Pixel is unavailable.`);
     return;
   }
 
-  const storageKey = getPurchaseStorageKey(eventID);
-  if (firedPurchases.has(eventID)) return;
+  const storageKey = getPurchaseStorageKey(event.event_id);
+  if (firedPurchases.has(event.event_id)) return;
   try {
     if (window.localStorage.getItem(storageKey) === "sent") {
-      firedPurchases.add(eventID);
+      firedPurchases.add(event.event_id);
       return;
     }
   } catch (error) {
-    logPixelError(`Could not read Purchase deduplication state for order ${eventID}.`, error);
+    logPixelError(`Could not read Purchase deduplication state for order ${event.event_id}.`, error);
   }
 
-  firedPurchases.add(eventID);
+  firedPurchases.add(event.event_id);
   try {
     window.localStorage.setItem(storageKey, "sent");
   } catch (error) {
-    logPixelError(`Could not persist Purchase deduplication state for order ${eventID}.`, error);
+    logPixelError(`Could not persist Purchase deduplication state for order ${event.event_id}.`, error);
   }
 
   console.trace("Purchase Pixel Fired");
-  const purchaseParams: Record<string, unknown> = { value };
-  delete purchaseParams.currency;
-  purchaseParams.currency = "DZD";
-
   try {
     window.fbq(
       "track",
-      "Purchase",
-      purchaseParams,
-      { eventID },
+      event.event_name,
+      { value: event.value, currency: event.currency },
+      { eventID: event.event_id },
     );
   } catch (error) {
-    logPixelError(`Purchase dispatch failed for order ${eventID}.`, error);
+    logPixelError(`Purchase dispatch failed for order ${event.event_id}.`, error);
   }
 }
 
