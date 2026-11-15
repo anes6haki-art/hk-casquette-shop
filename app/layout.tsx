@@ -49,6 +49,7 @@ guardedFbq.queue=originalFbq.queue||[];
 guardedFbq.push=guardedFbq;
 w.fbq=guardedFbq;
 w._fbq=guardedFbq;
+w.fbq('set','autoConfig',false,'1775961124238403');
 if(!w.__fbPixelInitialized){
   w.__fbPixelInitialized=true;
   w.fbq('init','1775961124238403');
