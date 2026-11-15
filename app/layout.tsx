@@ -25,6 +25,30 @@ if(!w.fbq){
   if(!w._fbq)w._fbq=n;
   n.push=n;n.loaded=true;n.version='2.0';n.queue=[];
 }
+var originalFbq=w.fbq;
+var guardedFbq=function(){
+  var command=arguments[0];
+  var eventName;
+  var eventData;
+  if(command==='track'||command==='trackCustom'){
+    eventName=arguments[1];
+    eventData=arguments[2];
+  }else if(command==='trackSingle'||command==='trackSingleCustom'){
+    eventName=arguments[2];
+    eventData=arguments[3];
+  }
+  if(eventName==='Purchase'&&(!eventData||eventData.currency!=='DZD')){
+    console.warn('[Meta Pixel] Blocked Purchase event without explicit DZD currency.');
+    return;
+  }
+  if(guardedFbq.callMethod)return guardedFbq.callMethod.apply(guardedFbq,arguments);
+  return originalFbq.apply(this,arguments);
+};
+Object.setPrototypeOf(guardedFbq,originalFbq);
+guardedFbq.queue=originalFbq.queue||[];
+guardedFbq.push=guardedFbq;
+w.fbq=guardedFbq;
+w._fbq=guardedFbq;
 if(!w.__fbPixelInitialized){
   w.__fbPixelInitialized=true;
   w.fbq('init','1775961124238403');
