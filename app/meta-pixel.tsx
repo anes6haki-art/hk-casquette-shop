@@ -82,14 +82,15 @@ export function trackPurchase(order: { id: string; totalPrice: number }) {
   }
 
   console.trace("Purchase Pixel Fired");
+  const purchaseParams: Record<string, unknown> = { value };
+  delete purchaseParams.currency;
+  purchaseParams.currency = "DZD";
+
   try {
     window.fbq(
       "track",
       "Purchase",
-      {
-        value,
-        currency: ORDER_CURRENCY,
-      },
+      purchaseParams,
       { eventID },
     );
   } catch (error) {
