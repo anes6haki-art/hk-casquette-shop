@@ -25,6 +25,75 @@ if(!w.fbq){
   if(!w._fbq)w._fbq=n;
   n.push=n;n.loaded=true;n.version='2.0';n.queue=[];
 }
+function hasBadPixelEvent(eventName,data){
+  var name=String(eventName||'').toLowerCase();
+  var currency;
+  var hasCurrency=false;
+  var hasEurCurrency=false;
+  var csEst=false;
+  if(data&&typeof data==='object'){
+    Object.keys(data).forEach(function(key){
+      var normalizedKey=key.toLowerCase();
+      if(normalizedKey==='currency'||normalizedKey==='cd[currency]'){
+        hasCurrency=true;
+        currency=String(data[key]).toUpperCase();
+        if(currency==='EUR')hasEurCurrency=true;
+      }
+      if((normalizedKey==='cs_est'||normalizedKey==='cd[cs_est]')&&String(data[key]).toLowerCase()==='true'){
+        csEst=true;
+      }
+    });
+  }
+  return hasEurCurrency||currency==='EUR'||csEst||(name==='purchase'&&(!hasCurrency||currency!=='DZD'));
+}
+function isPixelEventUrl(input){
+  try{
+    var address=typeof input==='string'?input:input&&(input.url||input.href);
+    var url=new URL(address,w.location&&w.location.href||'https://localhost/');
+    return url.hostname.toLowerCase().split('.').slice(-2).join('.')==='facebook.com'&&(url.pathname==='/tr'||url.pathname==='/tr/');
+  }catch(error){
+    return false;
+  }
+}
+function inspectPixelParams(params,state){
+  params.forEach(function(value,key){
+    var normalizedKey=String(key).toLowerCase();
+    if(normalizedKey==='ev'){
+      state.eventName=String(value);
+    }else if(normalizedKey==='currency'||normalizedKey==='cd[currency]'){
+      state.hasCurrency=true;
+      state.currency=String(value).toUpperCase();
+      if(state.currency==='EUR')state.hasEurCurrency=true;
+    }else if((normalizedKey==='cs_est'||normalizedKey==='cd[cs_est]')&&String(value).toLowerCase()==='true'){
+      state.csEst=true;
+    }
+  });
+}
+function shouldBlockPixelRequest(input,body){
+  if(!isPixelEventUrl(input))return false;
+  var address=typeof input==='string'?input:input&&(input.url||input.href);
+  var url=new URL(address,w.location&&w.location.href||'https://localhost/');
+  var state={eventName:'',hasCurrency:false,currency:'',hasEurCurrency:false,csEst:false};
+  inspectPixelParams(url.searchParams,state);
+  if(typeof body==='string'){
+    try{
+      inspectPixelParams(new URLSearchParams(body),state);
+    }catch(error){}
+    try{
+      var json=JSON.parse(body);
+      if(json&&typeof json==='object'){
+        if(json.event_name)state.eventName=String(json.event_name);
+        if(hasBadPixelEvent(state.eventName,json))return true;
+      }
+    }catch(error){}
+  }else if(body&&typeof body.forEach==='function'){
+    inspectPixelParams(body,state);
+  }
+  return state.hasEurCurrency||state.currency==='EUR'||state.csEst||(state.eventName.toLowerCase()==='purchase'&&(!state.hasCurrency||state.currency!=='DZD'));
+}
+function blockPixelRequest(){
+  console.warn('[Meta Pixel] Blocked an inferred or disallowed Pixel event before network dispatch.');
+}
 var originalFbq=w.fbq;
 var guardedFbq=function(){
   var command=arguments[0];
@@ -37,8 +106,8 @@ var guardedFbq=function(){
     eventName=arguments[2];
     eventData=arguments[3];
   }
-  if(eventName==='Purchase'&&(!eventData||eventData.currency!=='DZD')){
-    console.warn('[Meta Pixel] Blocked Purchase event without explicit DZD currency.');
+  if(eventName&&hasBadPixelEvent(eventName,eventData)){
+    console.warn('[Meta Pixel] Blocked a disallowed Pixel event before dispatch.');
     return;
   }
   if(guardedFbq.callMethod)return guardedFbq.callMethod.apply(guardedFbq,arguments);
@@ -50,6 +119,81 @@ guardedFbq.push=guardedFbq;
 w.fbq=guardedFbq;
 w._fbq=guardedFbq;
 w.fbq('set','autoConfig',false,'1775961124238403');
+var originalFetch=w.fetch;
+if(typeof originalFetch==='function'){
+  w.fetch=function(input,init){
+    var requestUrl=typeof input==='string'?input:input&&(input.url||input.href);
+    var body=init&&init.body;
+    if(!isPixelEventUrl(requestUrl))return originalFetch.apply(this,arguments);
+    if(body===undefined&&typeof Request!=='undefined'&&input instanceof Request){
+      var request=input;
+      return request.clone().text().then(function(text){
+        if(shouldBlockPixelRequest(request.url,text)){
+          blockPixelRequest();
+          throw new DOMException('Pixel event blocked by currency filter.','AbortError');
+        }
+        return originalFetch.call(w,request,init);
+      });
+    }
+    if(shouldBlockPixelRequest(requestUrl,body)){
+      blockPixelRequest();
+      return Promise.reject(new DOMException('Pixel event blocked by currency filter.','AbortError'));
+    }
+    return originalFetch.apply(this,arguments);
+  };
+}
+if(w.XMLHttpRequest){
+  var xhrUrls=new WeakMap();
+  var originalXhrOpen=w.XMLHttpRequest.prototype.open;
+  var originalXhrSend=w.XMLHttpRequest.prototype.send;
+  w.XMLHttpRequest.prototype.open=function(method,url){
+    xhrUrls.set(this,url);
+    return originalXhrOpen.apply(this,arguments);
+  };
+  w.XMLHttpRequest.prototype.send=function(body){
+    if(shouldBlockPixelRequest(xhrUrls.get(this),body)){
+      blockPixelRequest();
+      this.abort();
+      return;
+    }
+    return originalXhrSend.apply(this,arguments);
+  };
+}
+if(w.navigator&&typeof w.navigator.sendBeacon==='function'){
+  var originalSendBeacon=w.navigator.sendBeacon;
+  w.navigator.sendBeacon=function(url,data){
+    if(shouldBlockPixelRequest(url,data)){
+      blockPixelRequest();
+      return false;
+    }
+    return originalSendBeacon.call(this,url,data);
+  };
+}
+if(w.HTMLImageElement){
+  var imageSrc=Object.getOwnPropertyDescriptor(w.HTMLImageElement.prototype,'src');
+  if(imageSrc&&imageSrc.set){
+    Object.defineProperty(w.HTMLImageElement.prototype,'src',{
+      configurable:imageSrc.configurable,
+      enumerable:imageSrc.enumerable,
+      get:imageSrc.get,
+      set:function(url){
+        if(shouldBlockPixelRequest(url)){
+          blockPixelRequest();
+          return;
+        }
+        return imageSrc.set.call(this,url);
+      }
+    });
+  }
+  var originalImageSetAttribute=w.HTMLImageElement.prototype.setAttribute;
+  w.HTMLImageElement.prototype.setAttribute=function(name,value){
+    if(String(name).toLowerCase()==='src'&&shouldBlockPixelRequest(value)){
+      blockPixelRequest();
+      return;
+    }
+    return originalImageSetAttribute.apply(this,arguments);
+  };
+}
 if(!w.__fbPixelInitialized){
   w.__fbPixelInitialized=true;
   w.fbq('init','1775961124238403');
