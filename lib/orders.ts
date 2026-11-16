@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { Prisma } from "@prisma/client";
 import { getAdminSessionSecret, hasAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -23,6 +24,7 @@ import {
 
 const DUPLICATE_ORDER_WINDOW_MS = 24 * 60 * 60 * 1000;
 const DUPLICATE_CONFIRMATION_TOKEN_TTL_MS = 5 * 60 * 1000;
+const DUPLICATE_TRANSACTION_MAX_ATTEMPTS = 3;
 
 type DuplicateConfirmationPayload = {
   phone: string;
@@ -263,87 +265,96 @@ export async function createOrder(input: NewOrder, confirmationToken?: string) {
     ? shippingRate.homePrice
     : shippingRate.deskPrice;
 
-  return prisma.$transaction(async (transaction) => {
-    const lockKey = `${normalizedPhone}:${productSignature}`;
-    await transaction.$queryRaw`
-      SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))
-    `;
+  for (let attempt = 1; attempt <= DUPLICATE_TRANSACTION_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await prisma.$transaction(async (transaction) => {
+        const recentOrders = await transaction.order.findMany({
+          where: {
+            createdAt: { gte: new Date(Date.now() - DUPLICATE_ORDER_WINDOW_MS) },
+            status: { in: [...DUPLICATE_COUNTED_ORDER_STATUSES] },
+            items: { some: { productId: { in: productIds } } },
+          },
+          select: {
+            phone: true,
+            items: { select: { productId: true } },
+          },
+        });
+        const matchingOrderCount = countMatchingRecentOrders(
+          recentOrders,
+          normalizedPhone,
+          productSignature,
+        );
 
-    const recentOrders = await transaction.order.findMany({
-      where: {
-        createdAt: { gte: new Date(Date.now() - DUPLICATE_ORDER_WINDOW_MS) },
-        status: { in: [...DUPLICATE_COUNTED_ORDER_STATUSES] },
-        items: { some: { productId: { in: productIds } } },
-      },
-      select: {
-        phone: true,
-        items: { select: { productId: true } },
-      },
-    });
-    const matchingOrderCount = countMatchingRecentOrders(
-      recentOrders,
-      normalizedPhone,
-      productSignature,
-    );
+        if (matchingOrderCount >= 2) {
+          return { status: "limit_reached" as const };
+        }
+        if (matchingOrderCount === 1 && !confirmationIsValid) {
+          return {
+            status: "confirm_second" as const,
+            confirmationToken: createDuplicateConfirmationToken(normalizedPhone, productSignature),
+          };
+        }
 
-    if (matchingOrderCount >= 2) {
-      return { status: "limit_reached" as const };
-    }
-    if (matchingOrderCount === 1 && !confirmationIsValid) {
-      return {
-        status: "confirm_second" as const,
-        confirmationToken: createDuplicateConfirmationToken(normalizedPhone, productSignature),
-      };
-    }
+        for (const [productId, quantity] of quantityByProduct) {
+          const stockUpdate = await transaction.product.updateMany({
+            where: {
+              id: productId,
+              isActive: true,
+              stockQuantity: { gte: quantity },
+            },
+            data: { stockQuantity: { decrement: quantity } },
+          });
+          if (stockUpdate.count !== 1) {
+            throw new Error("تغير المخزون للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
+          }
+        }
+        for (const [variantId, quantity] of quantityByVariant) {
+          const stockUpdate = await transaction.productVariant.updateMany({
+            where: { id: variantId, stock: { gte: quantity } },
+            data: { stock: { decrement: quantity } },
+          });
+          if (stockUpdate.count !== 1) {
+            throw new Error("تغير مخزون اللون أو المقاس للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
+          }
+        }
 
-    for (const [productId, quantity] of quantityByProduct) {
-      const stockUpdate = await transaction.product.updateMany({
-        where: {
-          id: productId,
-          isActive: true,
-          stockQuantity: { gte: quantity },
-        },
-        data: { stockQuantity: { decrement: quantity } },
+        const order = await transaction.order.create({
+          data: {
+            name,
+            phone: `+213${normalizedPhone.slice(1)}`,
+            productTitle: orderProductTitle,
+            wilaya: input.wilaya,
+            commune,
+            notes: notes || null,
+            quantity: totalQuantity,
+            unitPrice,
+            shippingFee,
+            deliveryType: input.deliveryType,
+            totalPrice: subtotal + shippingFee,
+            items: { create: orderItems },
+          },
+          select: {
+            id: true,
+            shippingFee: true,
+            unitPrice: true,
+            totalPrice: true,
+            items: { select: { productId: true } },
+          },
+        });
+        return { status: "created" as const, order };
+      }, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       });
-      if (stockUpdate.count !== 1) {
-        throw new Error("تغير المخزون للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
+    } catch (error) {
+      const isSerializationConflict = error instanceof Prisma.PrismaClientKnownRequestError
+        && error.code === "P2034";
+      if (!isSerializationConflict || attempt === DUPLICATE_TRANSACTION_MAX_ATTEMPTS) {
+        throw error;
       }
     }
-    for (const [variantId, quantity] of quantityByVariant) {
-      const stockUpdate = await transaction.productVariant.updateMany({
-        where: { id: variantId, stock: { gte: quantity } },
-        data: { stock: { decrement: quantity } },
-      });
-      if (stockUpdate.count !== 1) {
-        throw new Error("تغير مخزون اللون أو المقاس للتو. حدّثوا الصفحة قبل تأكيد الطلب.");
-      }
-    }
+  }
 
-    const order = await transaction.order.create({
-      data: {
-        name,
-        phone: `+213${normalizedPhone.slice(1)}`,
-        productTitle: orderProductTitle,
-        wilaya: input.wilaya,
-        commune,
-        notes: notes || null,
-        quantity: totalQuantity,
-        unitPrice,
-        shippingFee,
-        deliveryType: input.deliveryType,
-        totalPrice: subtotal + shippingFee,
-        items: { create: orderItems },
-      },
-      select: {
-        id: true,
-        shippingFee: true,
-        unitPrice: true,
-        totalPrice: true,
-        items: { select: { productId: true } },
-      },
-    });
-    return { status: "created" as const, order };
-  });
+  throw new Error("تعذر إكمال الطلب. يرجى المحاولة مرة أخرى.");
 }
 
 export async function getOrdersForAdmin() {

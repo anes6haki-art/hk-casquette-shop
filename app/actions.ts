@@ -47,11 +47,17 @@ export async function submitOrder(input: NewOrder, confirmationToken?: string) {
     }
     return { ok: true as const, ...result };
   } catch (error) {
-    console.error("[Order] Failed to process order submission.", error);
+    console.error("DETAILED ORDER ERROR:", error);
+    console.error(
+      "DETAILED ORDER ERROR MESSAGE:",
+      error instanceof Error ? error.message : String(error),
+    );
     return {
       ok: false as const,
       status: "error" as const,
-      message: "حدث خطأ في الخادم، يرجى المحاولة لاحقاً",
+      message: process.env.NODE_ENV === "development" && error instanceof Error
+        ? error.message
+        : "حدث خطأ في الخادم، يرجى المحاولة لاحقاً",
     };
   }
 }
