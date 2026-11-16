@@ -96,6 +96,10 @@ export default function OrderForm({
 
     try {
       const result = await submitOrder(nextOrder, confirmationToken);
+      if (result.ok !== true) {
+        setSubmissionError(result.message);
+        return;
+      }
       if (result.status === "confirm_second") {
         setDuplicatePrompt({ order: nextOrder, token: result.confirmationToken });
         setLimitReached(false);
@@ -104,6 +108,10 @@ export default function OrderForm({
       if (result.status === "limit_reached") {
         setDuplicatePrompt(null);
         setLimitReached(true);
+        return;
+      }
+      if (result.status !== "created") {
+        setSubmissionError("حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى.");
         return;
       }
 

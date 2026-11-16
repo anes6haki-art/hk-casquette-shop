@@ -266,6 +266,10 @@ function CartDrawer({
 
     try {
       const result = await submitOrder(nextOrder, confirmationToken);
+      if (result.ok !== true) {
+        setError(result.message);
+        return;
+      }
       if (result.status === "confirm_second") {
         setDuplicatePrompt({ order: nextOrder, token: result.confirmationToken });
         setLimitReached(false);
@@ -274,6 +278,10 @@ function CartDrawer({
       if (result.status === "limit_reached") {
         setDuplicatePrompt(null);
         setLimitReached(true);
+        return;
+      }
+      if (result.status !== "created") {
+        setError("حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى.");
         return;
       }
 
