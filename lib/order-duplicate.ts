@@ -8,8 +8,8 @@ export const DUPLICATE_COUNTED_ORDER_STATUSES = [
 ] as const;
 
 export type RecentOrderForDuplicateCheck = {
-  phone: string;
-  items: { productId: string | null }[];
+  phone?: string | null;
+  items?: ({ productId?: string | null } | null)[] | null;
 };
 
 export function getProductSignature(productIds: string[]) {
@@ -17,14 +17,30 @@ export function getProductSignature(productIds: string[]) {
 }
 
 export function countMatchingRecentOrders(
-  orders: RecentOrderForDuplicateCheck[],
+  orders: (RecentOrderForDuplicateCheck | null | undefined)[],
   normalizedPhone: string,
   productSignature: string,
 ) {
   return orders.filter((order) => {
-    if (normalizeAlgerianPhoneNumber(order.phone) !== normalizedPhone) return false;
+    if (
+      !order
+      || typeof order.phone !== "string"
+      || normalizeAlgerianPhoneNumber(order.phone) !== normalizedPhone
+      || !Array.isArray(order.items)
+      || order.items.length === 0
+      || order.items.some((item) =>
+        !item || typeof item.productId !== "string" || item.productId.length === 0,
+      )
+    ) {
+      return false;
+    }
+
     const signature = getProductSignature(
-      order.items.flatMap((item) => item.productId ? [item.productId] : []),
+      order.items.flatMap((item) =>
+        typeof item?.productId === "string" && item.productId.length > 0
+          ? [item.productId]
+          : [],
+      ),
     );
     return signature === productSignature;
   }).length;

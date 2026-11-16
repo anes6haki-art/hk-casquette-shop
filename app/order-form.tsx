@@ -116,6 +116,10 @@ export default function OrderForm({
       }
 
       const savedOrder = result.order;
+      if (!savedOrder || typeof savedOrder.id !== "string" || savedOrder.id.length === 0) {
+        setSubmissionError("حدث خطأ أثناء معالجة الطلب، يرجى المحاولة مرة أخرى.");
+        return;
+      }
       setDuplicatePrompt(null);
       setLimitReached(false);
       if (!hasSentPurchase.current) {

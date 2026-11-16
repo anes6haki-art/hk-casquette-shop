@@ -127,11 +127,12 @@ export async function createOrder(input: NewOrder, confirmationToken?: string) {
   const requestedItems = input.items.map((item) => {
     if (
       !item ||
-      typeof item.productId !== "string" ||
-      typeof item.color !== "string" ||
-      typeof item.size !== "string" ||
-      typeof item.quantity !== "number" ||
-      (item.variantId !== undefined && typeof item.variantId !== "string")
+      typeof item?.productId !== "string" ||
+      item.productId.length === 0 ||
+      typeof item?.color !== "string" ||
+      typeof item?.size !== "string" ||
+      typeof item?.quantity !== "number" ||
+      (item?.variantId !== undefined && typeof item.variantId !== "string")
     ) {
       throw new Error("أحد عناصر الطلب غير صالح.");
     }
@@ -150,7 +151,12 @@ export async function createOrder(input: NewOrder, confirmationToken?: string) {
 
   const uniqueProductIds = [...new Set(requestedItems.map((item) => item.productId))];
   const products = await Promise.all(uniqueProductIds.map((productId) => getStorefrontProduct(productId)));
-  const productById = new Map(products.filter((product) => product !== null).map((product) => [product.id, product]));
+  const productById = new Map<string, NonNullable<(typeof products)[number]>>();
+  for (const product of products) {
+    if (typeof product?.id === "string" && product.id.length > 0) {
+      productById.set(product.id, product);
+    }
+  }
   if (productById.size !== uniqueProductIds.length) {
     throw new Error("أحد المنتجات لم يعد متاحاً.");
   }
@@ -163,6 +169,9 @@ export async function createOrder(input: NewOrder, confirmationToken?: string) {
 
     quantityByProduct.set(item.productId, (quantityByProduct.get(item.productId) ?? 0) + item.quantity);
 
+    if (!Array.isArray(product.variants)) {
+      throw new Error("بيانات خيارات المنتج غير صالحة.");
+    }
     if (product.variants.length === 0) {
       if (item.variantId || item.color !== "Standard") {
         throw new Error("اللون المحدد لم يعد متاحاً.");
@@ -177,8 +186,14 @@ export async function createOrder(input: NewOrder, confirmationToken?: string) {
       };
     }
 
-    const variant = product.variants.find((candidate) => candidate.id === item.variantId);
-    if (!variant || item.color !== variant.colorName || item.size !== variant.size) {
+    const variant = product.variants.find((candidate) => candidate?.id === item.variantId);
+    if (
+      !variant
+      || typeof variant.id !== "string"
+      || variant.id.length === 0
+      || item.color !== variant.colorName
+      || item.size !== variant.size
+    ) {
       throw new Error("اللون أو المقاس المحدد لم يعد متاحاً.");
     }
     if (variant.stock < item.quantity) {
@@ -221,7 +236,14 @@ export async function createOrder(input: NewOrder, confirmationToken?: string) {
   }
   const orderProductTitle = [...new Set(orderItems.map((item) => item.title))].join(", ").slice(0, 500);
   const unitPrice = orderItems[0].unitPrice;
-  const productIds = orderItems.map((item) => item.productId);
+  const productIds = orderItems.flatMap((item) =>
+    typeof item?.productId === "string" && item.productId.length > 0
+      ? [item.productId]
+      : [],
+  );
+  if (productIds.length !== orderItems.length) {
+    throw new Error("أحد المنتجات لا يحتوي على معرّف صالح.");
+  }
   const productSignature = getProductSignature(productIds);
   const confirmationIsValid = isValidDuplicateConfirmationToken(
     confirmationToken,

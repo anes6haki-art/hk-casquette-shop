@@ -13,6 +13,9 @@ export async function submitOrder(input: NewOrder, confirmationToken?: string) {
     if (result.status !== "created") return { ok: true as const, ...result };
 
     const order = result.order;
+    if (!order || typeof order.id !== "string" || order.id.length === 0) {
+      throw new Error("Order creation returned an invalid order ID.");
+    }
     let eventSourceUrl: string | null = null;
     try {
       const requestHeaders = await headers();
