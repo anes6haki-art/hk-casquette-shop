@@ -4,10 +4,14 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createOrder } from "@/lib/orders";
 import { sendPurchaseToConversionsApi } from "@/lib/meta-conversions-api";
+import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import type { NewOrder } from "@/lib/store-data";
 
-export async function submitOrder(input: NewOrder) {
-  const order = await createOrder(input);
+export async function submitOrder(input: NewOrder, confirmationToken?: string) {
+  const result = await createOrder(input, confirmationToken);
+  if (result.status !== "created") return result;
+
+  const order = result.order;
   let eventSourceUrl: string | null = null;
   try {
     const requestHeaders = await headers();
@@ -15,7 +19,12 @@ export async function submitOrder(input: NewOrder) {
   } catch (error) {
     console.error(`[Meta CAPI] Could not read request URL for saved order ${order.id}.`, error);
   }
-  await sendPurchaseToConversionsApi(order, input.phone, eventSourceUrl);
+  const normalizedPhone = normalizeAlgerianPhoneNumber(input.phone);
+  if (normalizedPhone) {
+    await sendPurchaseToConversionsApi(order, normalizedPhone, eventSourceUrl);
+  } else {
+    console.error(`[Meta CAPI] Purchase for saved order ${order.id} was not sent: customer phone could not be normalized.`);
+  }
 
   try {
     revalidatePath("/admin");
@@ -28,5 +37,5 @@ export async function submitOrder(input: NewOrder) {
   } catch (error) {
     console.error(`[Order ${order.id}] Saved successfully, but cache revalidation failed.`, error);
   }
-  return order;
+  return result;
 }

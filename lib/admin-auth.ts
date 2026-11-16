@@ -7,15 +7,22 @@ import { connection } from "next/server";
 export const ADMIN_COOKIE_NAME = "nora_admin_session";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 8;
 
-function getAdminConfig() {
-  const password =
-    process.env.ADMIN_PASSWORD ??
-    (process.env.NODE_ENV === "production" ? undefined : "admin123");
+export function getAdminSessionSecret() {
   const secret =
     process.env.ADMIN_SESSION_SECRET ??
     (process.env.NODE_ENV === "production"
       ? undefined
       : "nora-local-development-session-secret-rotate-before-production");
+  if (!secret || secret.length < 32) {
+    throw new Error("ADMIN_SESSION_SECRET must contain at least 32 characters.");
+  }
+  return secret;
+}
+
+function getAdminConfig() {
+  const password =
+    process.env.ADMIN_PASSWORD ??
+    (process.env.NODE_ENV === "production" ? undefined : "admin123");
 
   if (!password) {
     throw new Error("Set ADMIN_PASSWORD.");
@@ -30,11 +37,8 @@ function getAdminConfig() {
   if (process.env.NODE_ENV === "production" && password === "admin123") {
     console.warn("ADMIN_PASSWORD is set to the requested local default; replace it before public deployment.");
   }
-  if (!secret || secret.length < 32) {
-    throw new Error("ADMIN_SESSION_SECRET must contain at least 32 characters.");
-  }
 
-  return { password, secret };
+  return { password, secret: getAdminSessionSecret() };
 }
 
 function safeEqual(left: string, right: string) {

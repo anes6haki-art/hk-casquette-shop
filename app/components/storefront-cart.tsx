@@ -11,6 +11,7 @@ import {
 } from "react";
 import { submitOrder } from "@/app/actions";
 import { trackInitiateCheckout, trackPurchase } from "@/app/meta-pixel";
+import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
   COMMUNES_BY_WILAYA_CODE,
@@ -225,6 +226,8 @@ function CartDrawer({
   const [deliveryType, setDeliveryType] = useState<DeliveryType>("HOME");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicatePrompt, setDuplicatePrompt] = useState<{ order: NewOrder; token: string } | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const [order, setOrder] = useState<{ id: string; price: number; name: string; phone: string } | null>(null);
   const isSubmittingRef = useRef(false);
   const hasSentPurchase = useRef(false);
@@ -250,14 +253,72 @@ function CartDrawer({
   });
   const communes = wilayaCode ? COMMUNES_BY_WILAYA_CODE[wilayaCode] ?? [] : [];
 
+  function changeItem(id: number, color: string, size: string) {
+    setDuplicatePrompt(null);
+    setLimitReached(false);
+    updateItem(id, color, size);
+  }
+
+  async function submitPreparedOrder(nextOrder: NewOrder, confirmationToken?: string) {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      const result = await submitOrder(nextOrder, confirmationToken);
+      if (result.status === "confirm_second") {
+        setDuplicatePrompt({ order: nextOrder, token: result.confirmationToken });
+        setLimitReached(false);
+        return;
+      }
+      if (result.status === "limit_reached") {
+        setDuplicatePrompt(null);
+        setLimitReached(true);
+        return;
+      }
+
+      const savedOrder = result.order;
+      setDuplicatePrompt(null);
+      setLimitReached(false);
+      if (!hasSentPurchase.current) {
+        hasSentPurchase.current = true;
+        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
+      }
+      setOrder({
+        id: savedOrder.id,
+        price: savedOrder.totalPrice,
+        name: nextOrder.name,
+        phone: nextOrder.phone,
+      });
+      onClear();
+      setStep("success");
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "تعذر تسجيل الطلب. تحققوا من المعلومات وحاولوا مجدداً.",
+      );
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isSubmittingRef.current) return;
     setError(null);
+    setDuplicatePrompt(null);
+    setLimitReached(false);
     const formData = new FormData(event.currentTarget);
+    const phone = String(formData.get("phone") ?? "");
+    if (!normalizeAlgerianPhoneNumber(phone)) {
+      setError("أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456 أو +213550123456).");
+      return;
+    }
     const order: NewOrder = {
       name: String(formData.get("name") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
+      phone,
       wilaya,
       commune,
       deliveryType,
@@ -281,32 +342,8 @@ function CartDrawer({
       }),
     };
 
-    isSubmittingRef.current = true;
-    setIsSubmitting(true);
-    try {
-      const savedOrder = await submitOrder(order);
-      if (!hasSentPurchase.current) {
-        hasSentPurchase.current = true;
-        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
-      }
-      setOrder({
-        id: savedOrder.id,
-        price: savedOrder.totalPrice,
-        name: order.name,
-        phone: order.phone,
-      });
-      onClear();
-      setStep("success");
-    } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "تعذر تسجيل الطلب. تحققوا من المعلومات وحاولوا مجدداً.",
-      );
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
+    hasSentPurchase.current = false;
+    await submitPreparedOrder(order);
   }
 
   return (
@@ -409,8 +446,20 @@ function CartDrawer({
         )}
 
         {step === "checkout" && (
-          <form className="storefront-checkout-form" onSubmit={handleSubmit}>
-            <button className="storefront-cart-back" type="button" onClick={() => setStep("cart")}>→ العودة إلى السلة</button>
+          <form
+            className="storefront-checkout-form"
+            onSubmit={handleSubmit}
+            onChange={() => {
+              setDuplicatePrompt(null);
+              setLimitReached(false);
+              setError(null);
+            }}
+          >
+            <button className="storefront-cart-back" type="button" onClick={() => {
+              setDuplicatePrompt(null);
+              setLimitReached(false);
+              setStep("cart");
+            }}>→ العودة إلى السلة</button>
             <section className="storefront-checkout-customizations" aria-labelledby="storefront-checkout-items-title">
               <h3 id="storefront-checkout-items-title">خصصوا كل قطعة</h3>
               {items.map((item, index) => {
@@ -436,7 +485,7 @@ function CartDrawer({
                             className={`storefront-cart-color${item.color === option.color ? " is-selected" : ""}`}
                             key={option.color}
                             type="button"
-                            onClick={() => updateItem(item.id, option.color, getAvailableSizes(product, option.color)[0] ?? "Standard")}
+                            onClick={() => changeItem(item.id, option.color, getAvailableSizes(product, option.color)[0] ?? "Standard")}
                             disabled={option.stock < 1}
                             aria-label={getColorLabelAr(option.color)}
                             aria-pressed={item.color === option.color}
@@ -459,7 +508,7 @@ function CartDrawer({
                               type="button"
                               disabled={!isAvailable}
                               aria-pressed={item.size === size && isAvailable}
-                              onClick={() => updateItem(item.id, item.color, size)}
+                              onClick={() => changeItem(item.id, item.color, size)}
                             >{size}</button>
                           );
                         })}
@@ -483,11 +532,10 @@ function CartDrawer({
                 name="phone"
                 type="tel"
                 autoComplete="tel-national"
-                inputMode="numeric"
-                pattern="(0[5-7][0-9]{8}|[5-7][0-9]{8})"
-                title="أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456)"
+                title="أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456 أو +213550123456)"
                 required
                 dir="ltr"
+                inputMode="tel"
                 placeholder="0550 12 34 56"
               />
             </label>
@@ -542,12 +590,33 @@ function CartDrawer({
               <strong>{formatPrice(subtotal + (shippingRate ? shippingFee : 0))}</strong>
             </div>
             {error && <p className="storefront-checkout-error" role="alert">{error}</p>}
+            {duplicatePrompt && (
+              <div className="storefront-checkout-error" role="alert" aria-live="assertive">
+                <p>يبدو أنكم قمتم بطلب هذا المنتج مسبقاً. هل ترغبون في تأكيد طلبية إضافية؟</p>
+                <button
+                  className="storefront-cart-primary"
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => submitPreparedOrder(duplicatePrompt.order, duplicatePrompt.token)}
+                >
+                  {isSubmitting ? "جارٍ تأكيد الطلب…" : "نعم، تأكيد الطلبية"}
+                </button>
+              </div>
+            )}
+            {limitReached && (
+              <div className="storefront-checkout-error" role="alert" aria-live="assertive">
+                <p>لقد تم تسجيل طلباتكم لهذا المنتج مسبقاً. للمزيد من الاستفسارات أو لإضافة طلبية جديدة، يرجى التواصل معنا مباشرة عبر واتساب.</p>
+                <a className="storefront-cart-primary" href="https://wa.me/213540404661" target="_blank" rel="noopener noreferrer">
+                  تواصل معنا عبر واتساب
+                </a>
+              </div>
+            )}
             {hasUnavailableItem && (
               <p className="storefront-checkout-error" role="alert">
                 أحد الخيارات المحددة لم يعد متوفراً. عدّلوا اللون أو المقاس قبل إتمام الطلب.
               </p>
             )}
-            <button className="storefront-cart-primary" type="submit" disabled={isSubmitting || !shippingRate || items.length === 0 || hasUnavailableItem}>
+            <button className="storefront-cart-primary" type="submit" disabled={isSubmitting || Boolean(duplicatePrompt) || limitReached || !shippingRate || items.length === 0 || hasUnavailableItem}>
               {isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب · الدفع عند الاستلام"}
             </button>
             <p className="storefront-checkout-note">الدفع عند الاستلام · التوصيل إلى الولايات الـ58</p>

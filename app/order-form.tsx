@@ -4,6 +4,7 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
 import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
+import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import {
   DELIVERY_LABELS,
   COMMUNES_BY_WILAYA_CODE as communesData,
@@ -15,6 +16,7 @@ import {
   WILAYAS,
   type ProductDto,
   type DeliveryType,
+  type NewOrder,
   type ShippingRateDto,
 } from "@/lib/store-data";
 
@@ -62,6 +64,8 @@ export default function OrderForm({
   const [order, setOrder] = useState<OrderConfirmation | null>(null);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicatePrompt, setDuplicatePrompt] = useState<{ order: NewOrder; token: string } | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const checkoutTracked = useRef(false);
   const isSubmittingRef = useRef(false);
   const hasSentPurchase = useRef(false);
@@ -81,6 +85,56 @@ export default function OrderForm({
     setSelectedWilayaCode(code ? String(code) : "");
     setCommune("");
     setSubmissionError(null);
+    setDuplicatePrompt(null);
+    setLimitReached(false);
+  }
+
+  async function submitPreparedOrder(nextOrder: NewOrder, confirmationToken?: string) {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    setIsSubmitting(true);
+
+    try {
+      const result = await submitOrder(nextOrder, confirmationToken);
+      if (result.status === "confirm_second") {
+        setDuplicatePrompt({ order: nextOrder, token: result.confirmationToken });
+        setLimitReached(false);
+        return;
+      }
+      if (result.status === "limit_reached") {
+        setDuplicatePrompt(null);
+        setLimitReached(true);
+        return;
+      }
+
+      const savedOrder = result.order;
+      setDuplicatePrompt(null);
+      setLimitReached(false);
+      if (!hasSentPurchase.current) {
+        hasSentPurchase.current = true;
+        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
+      }
+      setOrder({
+        id: savedOrder.id,
+        price: savedOrder.totalPrice,
+        name: nextOrder.name,
+        phone: nextOrder.phone,
+        wilaya: nextOrder.wilaya,
+        commune: nextOrder.commune,
+        deliveryType: nextOrder.deliveryType,
+        shippingFee: savedOrder.shippingFee,
+        items: nextOrder.items,
+      });
+    } catch (error) {
+      setSubmissionError(
+        error instanceof Error
+          ? error.message
+          : "تعذر تسجيل طلبكم. تحققوا من المعلومات وحاولوا مجدداً.",
+      );
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -92,7 +146,7 @@ export default function OrderForm({
     const name = String(formData.get("name") ?? "").trim();
     const formPhone = String(formData.get("phone") ?? "");
     const formCommune = String(formData.get("commune") ?? "");
-    const validPhone = /^(0[5-7][0-9]{8}|[5-7][0-9]{8})$/.test(formPhone);
+    const validPhone = normalizeAlgerianPhoneNumber(formPhone) !== null;
     const wilayaIndex = Number(selectedWilayaCode) - 1;
     const selectedWilaya = Number.isInteger(wilayaIndex) ? WILAYAS[wilayaIndex] : undefined;
     const validCommunes = selectedWilayaCode
@@ -179,42 +233,9 @@ export default function OrderForm({
       deliveryType,
     };
 
-    setSubmissionError(null);
-    isSubmittingRef.current = true;
     hasSentPurchase.current = false;
-    setIsSubmitting(true);
-    try {
-      const savedOrder = await submitOrder(nextOrder);
-      if (!hasSentPurchase.current) {
-        hasSentPurchase.current = true;
-        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
-      }
-      setOrder({
-        id: savedOrder.id,
-        price: savedOrder.totalPrice,
-        name: nextOrder.name,
-        phone: formPhone,
-        wilaya,
-        commune: nextOrder.commune,
-        deliveryType,
-        shippingFee: savedOrder.shippingFee,
-        items: packItems.map((it) => {
-          const variant = product.variants.find((variant) =>
-            variant.colorName === it.color && variant.size === it.size && variant.stock > 0,
-          );
-          return { productId: product.id, color: it.color, size: it.size, quantity: 1, variantId: variant?.id ?? '' };
-        }),
-      });
-    } catch (error) {
-      setSubmissionError(
-        error instanceof Error
-          ? error.message
-          : "تعذر تسجيل طلبكم. تحققوا من المعلومات وحاولوا مجدداً.",
-      );
-    } finally {
-      isSubmittingRef.current = false;
-      setIsSubmitting(false);
-    }
+    setSubmissionError(null);
+    await submitPreparedOrder(nextOrder);
   }
 
   return (
@@ -229,7 +250,11 @@ export default function OrderForm({
           checkoutTracked.current = true;
           trackInitiateCheckout(packSubtotal, packItems.map(() => product.id));
         }}
-        onChange={() => setSubmissionError(null)}
+        onChange={() => {
+          setSubmissionError(null);
+          setDuplicatePrompt(null);
+          setLimitReached(false);
+        }}
         onSubmit={handleSubmit}
       >
         <label className="field">
@@ -246,8 +271,8 @@ export default function OrderForm({
               placeholder="0550 12 34 56"
               autoComplete="tel-national"
               inputMode="numeric"
-              pattern="(0[5-7][0-9]{8}|[5-7][0-9]{8})"
-              title="أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456)"
+              pattern="[0-9+() -]{9,18}"
+              title="أدخلوا رقم هاتف جزائرياً صالحاً (مثال: 0550123456 أو +213550123456)"
               required
               dir="ltr"
             />
@@ -316,10 +341,31 @@ export default function OrderForm({
             {submissionError}
           </p>
         )}
+        {duplicatePrompt && (
+          <div className="form-error" role="alert" aria-live="assertive">
+            <p>يبدو أنكم قمتم بطلب هذا المنتج مسبقاً. هل ترغبون في تأكيد طلبية إضافية؟</p>
+            <button
+              className="submit-button"
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => submitPreparedOrder(duplicatePrompt.order, duplicatePrompt.token)}
+            >
+              {isSubmitting ? "جارٍ تأكيد الطلب…" : "نعم، تأكيد الطلبية"}
+            </button>
+          </div>
+        )}
+        {limitReached && (
+          <div className="form-error" role="alert" aria-live="assertive">
+            <p>لقد تم تسجيل طلباتكم لهذا المنتج مسبقاً. للمزيد من الاستفسارات أو لإضافة طلبية جديدة، يرجى التواصل معنا مباشرة عبر واتساب.</p>
+            <a className="submit-button" href="https://wa.me/213540404661" target="_blank" rel="noopener noreferrer">
+              تواصل معنا عبر واتساب
+            </a>
+          </div>
+        )}
         <button
           className="submit-button"
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || Boolean(duplicatePrompt) || limitReached}
         >
           {isSubmitting ? "جارٍ تسجيل الطلب…" : "تأكيد الطلب الآن (الدفع عند الاستلام)"}
         </button>
