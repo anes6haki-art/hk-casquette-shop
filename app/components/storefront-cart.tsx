@@ -294,7 +294,10 @@ function CartDrawer({
       setLimitReached(false);
       if (!hasSentPurchase.current) {
         hasSentPurchase.current = true;
-        trackPurchase({ id: savedOrder.id, totalPrice: savedOrder.totalPrice });
+        trackPurchase(
+          { id: savedOrder.id, totalPrice: savedOrder.totalPrice },
+          { name: nextOrder.name, phone: nextOrder.phone },
+        );
       }
       setOrder({
         id: savedOrder.id,

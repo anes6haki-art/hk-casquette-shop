@@ -2,7 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { createPurchaseEvent } from "../lib/meta-purchase";
+import {
+  createPurchaseEvent,
+  META_PIXEL_ID,
+  normalizeMetaPhone,
+  splitCustomerName,
+  type CustomerMetaData,
+} from "../lib/meta-purchase";
 
 const PURCHASE_STORAGE_PREFIX = "meta-pixel-purchase-sent:";
 const ORDER_CURRENCY = "DZD";
@@ -47,7 +53,10 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   }
 }
 
-export function trackPurchase(order: { id: string; totalPrice: number }) {
+export function trackPurchase(
+  order: { id: string; totalPrice: number },
+  customer: CustomerMetaData,
+) {
   const event = createPurchaseEvent(order);
 
   if (typeof window === "undefined") {
@@ -61,6 +70,20 @@ export function trackPurchase(order: { id: string; totalPrice: number }) {
   if (typeof window.fbq !== "function") {
     logPixelError(`Purchase for order ${event.event_id} could not be dispatched because the Pixel is unavailable.`);
     return;
+  }
+
+  const normalizedPhone = normalizeMetaPhone(customer.phone);
+  const { firstName, lastName } = splitCustomerName(customer.name);
+  try {
+    const advancedMatching: { ph?: string[]; fn?: string[]; ln?: string[] } = {};
+    if (normalizedPhone) advancedMatching.ph = [normalizedPhone];
+    if (firstName) advancedMatching.fn = [firstName];
+    if (lastName) advancedMatching.ln = [lastName];
+    if (Object.keys(advancedMatching).length > 0) {
+      window.fbq("init", META_PIXEL_ID, advancedMatching);
+    }
+  } catch (error) {
+    logPixelError(`Purchase advanced matching could not be applied for order ${event.event_id}.`, error);
   }
 
   const storageKey = getPurchaseStorageKey(event.event_id);

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createOrder } from "@/lib/orders";
 import { sendPurchaseToConversionsApi } from "@/lib/meta-conversions-api";
 import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
@@ -17,16 +17,35 @@ export async function submitOrder(input: NewOrder, confirmationToken?: string) {
       throw new Error("Order creation returned an invalid order ID.");
     }
     let eventSourceUrl: string | null = null;
+    let fbp: string | undefined;
+    let fbc: string | undefined;
+    let clientIpAddress: string | undefined;
+    let clientUserAgent: string | undefined;
     try {
       const requestHeaders = await headers();
       eventSourceUrl = requestHeaders.get("referer") ?? requestHeaders.get("origin");
+      clientIpAddress = (
+        requestHeaders.get("x-forwarded-for")?.split(",", 1)[0]
+        ?? requestHeaders.get("x-real-ip")
+        ?? requestHeaders.get("cf-connecting-ip")
+      )?.trim() || undefined;
+      clientUserAgent = requestHeaders.get("user-agent")?.trim() || undefined;
+
+      const cookieStore = await cookies();
+      fbp = cookieStore.get("_fbp")?.value;
+      fbc = cookieStore.get("_fbc")?.value;
     } catch (error) {
-      console.error(`[Meta CAPI] Could not read request URL for saved order ${order.id}.`, error);
+      console.error(`[Meta CAPI] Could not read request context for saved order ${order.id}.`, error);
     }
     const normalizedPhone = normalizeAlgerianPhoneNumber(input.phone);
     if (normalizedPhone) {
       try {
-        await sendPurchaseToConversionsApi(order, normalizedPhone, eventSourceUrl);
+        await sendPurchaseToConversionsApi(
+          order,
+          { name: input.name, phone: normalizedPhone },
+          eventSourceUrl,
+          { fbp, fbc, clientIpAddress, clientUserAgent },
+        );
       } catch (error) {
         console.error(`[Meta CAPI] Purchase dispatch failed for saved order ${order.id}.`, error);
       }
