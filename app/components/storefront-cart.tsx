@@ -11,6 +11,7 @@ import {
 } from "react";
 import { submitOrder } from "@/app/actions";
 import { trackInitiateCheckout, trackPurchase } from "@/app/meta-pixel";
+import { createPurchaseEventId } from "@/lib/meta-purchase";
 import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
@@ -265,7 +266,8 @@ function CartDrawer({
     setIsSubmitting(true);
 
     try {
-      const result = await submitOrder(nextOrder, confirmationToken);
+      const purchaseEventId = createPurchaseEventId();
+      const result = await submitOrder(nextOrder, purchaseEventId, confirmationToken);
       if (result.ok !== true) {
         setError(result.message);
         return;
@@ -294,9 +296,10 @@ function CartDrawer({
       setLimitReached(false);
       if (!hasSentPurchase.current) {
         hasSentPurchase.current = true;
-        trackPurchase(
+        await trackPurchase(
           { id: savedOrder.id, totalPrice: savedOrder.totalPrice },
           { name: nextOrder.name, phone: nextOrder.phone },
+          result.purchaseEventId,
         );
       }
       setOrder({

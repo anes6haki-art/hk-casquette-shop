@@ -40,7 +40,15 @@ export function splitCustomerName(value: string) {
   };
 }
 
-export function createPurchaseEvent(order: { id: string; totalPrice: number }) {
+export function createPurchaseEventId() {
+  return globalThis.crypto.randomUUID();
+}
+
+export function isValidPurchaseEventId(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function createPurchaseEvent(order: { id: string; totalPrice: number }, eventId: string) {
   const rawValue = Number(order.totalPrice);
   const value = Number.isFinite(rawValue)
     ? Math.round((rawValue + Number.EPSILON) * 100) / 100
@@ -48,7 +56,7 @@ export function createPurchaseEvent(order: { id: string; totalPrice: number }) {
 
   return {
     event_name: "Purchase" as const,
-    event_id: String(order.id).trim(),
+    event_id: eventId,
     value,
     currency: PURCHASE_CURRENCY,
   };

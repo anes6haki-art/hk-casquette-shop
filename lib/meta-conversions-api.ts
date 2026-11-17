@@ -34,6 +34,7 @@ function normalizeEventSourceUrl(sourceUrl: string) {
 
 export async function sendPurchaseToConversionsApi(
   order: { id: string; totalPrice: number },
+  eventId: string,
   customer: CustomerMetaData,
   sourceUrl: string | null,
   requestData: {
@@ -43,7 +44,7 @@ export async function sendPurchaseToConversionsApi(
     clientUserAgent?: string;
   },
 ) {
-  const event = createPurchaseEvent(order);
+  const event = createPurchaseEvent(order, eventId);
   if (!event.event_id || !Number.isSafeInteger(event.value) || event.value <= 0) {
     console.error("[Meta CAPI] Skipped Purchase with invalid saved order data.");
     return;

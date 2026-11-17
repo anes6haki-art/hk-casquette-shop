@@ -50,7 +50,7 @@ The `/admin/products` page lets administrators create, edit, activate, and delet
 
 ### Meta Purchase tracking
 
-The browser Pixel and server Conversions API send a Purchase only after an order is saved. Both use the saved order ID as the deduplication event ID, the saved final total (including its already-calculated delivery fee), and `DZD`. Configure `META_CONVERSIONS_API_ACCESS_TOKEN` as a server-only secret to enable Conversions API delivery; missing configuration or API failures are logged without undoing a saved order.
+The browser Pixel and server Conversions API send a Purchase only after an order is saved. The browser generates one UUID per submission and passes it through the server action; the identical ID is sent as Pixel `eventID` and CAPI `event_id`. Both channels use the saved final total (including its already-calculated delivery fee) and `DZD`. Advanced Matching sends SHA-256-hashed normalized phone and split name data; no email is collected. CAPI also includes available `_fbp`/`_fbc` cookies and request IP/user-agent data. Configure `META_CONVERSIONS_API_ACCESS_TOKEN` as a server-only secret to enable Conversions API delivery; missing configuration or API failures are logged without undoing a saved order.
 
 ### DHD delivery
 

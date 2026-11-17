@@ -4,6 +4,7 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
 import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
+import { createPurchaseEventId } from "@/lib/meta-purchase";
 import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import {
   DELIVERY_LABELS,
@@ -95,7 +96,8 @@ export default function OrderForm({
     setIsSubmitting(true);
 
     try {
-      const result = await submitOrder(nextOrder, confirmationToken);
+      const purchaseEventId = createPurchaseEventId();
+      const result = await submitOrder(nextOrder, purchaseEventId, confirmationToken);
       if (result.ok !== true) {
         setSubmissionError(result.message);
         return;
@@ -124,9 +126,10 @@ export default function OrderForm({
       setLimitReached(false);
       if (!hasSentPurchase.current) {
         hasSentPurchase.current = true;
-        trackPurchase(
+        await trackPurchase(
           { id: savedOrder.id, totalPrice: savedOrder.totalPrice },
           { name: nextOrder.name, phone: nextOrder.phone },
+          result.purchaseEventId,
         );
       }
       setOrder({

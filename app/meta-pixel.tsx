@@ -6,12 +6,13 @@ import {
   createPurchaseEvent,
   META_PIXEL_ID,
   normalizeMetaPhone,
+  normalizeMetaText,
+  PURCHASE_CURRENCY,
   splitCustomerName,
   type CustomerMetaData,
 } from "../lib/meta-purchase";
 
 const PURCHASE_STORAGE_PREFIX = "meta-pixel-purchase-sent:";
-const ORDER_CURRENCY = "DZD";
 const firedPurchases = new Set<string>();
 
 declare global {
@@ -31,6 +32,14 @@ function getPurchaseStorageKey(orderId: string) {
   return `${PURCHASE_STORAGE_PREFIX}${encodeURIComponent(orderId)}`;
 }
 
+async function hashMetaValue(value: string) {
+  const digest = await window.crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(normalizeMetaText(value)),
+  );
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export function trackInitiateCheckout(value: number, productIds: string[]) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") {
     logPixelError("InitiateCheckout could not be dispatched because the Pixel is unavailable.");
@@ -44,7 +53,7 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   try {
     window.fbq("track", "InitiateCheckout", {
       value,
-      currency: ORDER_CURRENCY,
+      currency: PURCHASE_CURRENCY,
       content_type: "product",
       content_ids: [...new Set(productIds)],
     });
@@ -53,11 +62,12 @@ export function trackInitiateCheckout(value: number, productIds: string[]) {
   }
 }
 
-export function trackPurchase(
+export async function trackPurchase(
   order: { id: string; totalPrice: number },
   customer: CustomerMetaData,
+  eventId: string,
 ) {
-  const event = createPurchaseEvent(order);
+  const event = createPurchaseEvent(order, eventId);
 
   if (typeof window === "undefined") {
     logPixelError("Purchase tracking was called outside the browser.");
@@ -74,45 +84,49 @@ export function trackPurchase(
 
   const normalizedPhone = normalizeMetaPhone(customer.phone);
   const { firstName, lastName } = splitCustomerName(customer.name);
-  try {
-    const advancedMatching: { ph?: string[]; fn?: string[]; ln?: string[] } = {};
-    if (normalizedPhone) advancedMatching.ph = [normalizedPhone];
-    if (firstName) advancedMatching.fn = [firstName];
-    if (lastName) advancedMatching.ln = [lastName];
-    if (Object.keys(advancedMatching).length > 0) {
-      window.fbq("init", META_PIXEL_ID, advancedMatching);
-    }
-  } catch (error) {
-    logPixelError(`Purchase advanced matching could not be applied for order ${event.event_id}.`, error);
-  }
-
-  const storageKey = getPurchaseStorageKey(event.event_id);
-  if (firedPurchases.has(event.event_id)) return;
+  const storageKey = getPurchaseStorageKey(order.id);
+  if (firedPurchases.has(order.id)) return;
   try {
     if (window.localStorage.getItem(storageKey) === "sent") {
-      firedPurchases.add(event.event_id);
+      firedPurchases.add(order.id);
       return;
     }
   } catch (error) {
     logPixelError(`Could not read Purchase deduplication state for order ${event.event_id}.`, error);
   }
 
-  firedPurchases.add(event.event_id);
+  firedPurchases.add(order.id);
+  const advancedMatching: { ph?: string; fn?: string; ln?: string } = {};
   try {
-    window.localStorage.setItem(storageKey, "sent");
+    const [phoneHash, firstNameHash, lastNameHash] = await Promise.all([
+      normalizedPhone ? hashMetaValue(normalizedPhone) : Promise.resolve(undefined),
+      firstName ? hashMetaValue(firstName) : Promise.resolve(undefined),
+      lastName ? hashMetaValue(lastName) : Promise.resolve(undefined),
+    ]);
+    if (phoneHash) advancedMatching.ph = phoneHash;
+    if (firstNameHash) advancedMatching.fn = firstNameHash;
+    if (lastNameHash) advancedMatching.ln = lastNameHash;
   } catch (error) {
-    logPixelError(`Could not persist Purchase deduplication state for order ${event.event_id}.`, error);
+    logPixelError(`Purchase Advanced Matching could not be hashed for order ${event.event_id}.`, error);
   }
 
-  console.trace("Purchase Pixel Fired");
   try {
+    if (Object.keys(advancedMatching).length > 0) {
+      window.fbq("init", META_PIXEL_ID, advancedMatching);
+    }
     window.fbq(
       "track",
       event.event_name,
       { value: event.value, currency: event.currency },
       { eventID: event.event_id },
     );
+    try {
+      window.localStorage.setItem(storageKey, "sent");
+    } catch (error) {
+      logPixelError(`Could not persist Purchase deduplication state for order ${event.event_id}.`, error);
+    }
   } catch (error) {
+    firedPurchases.delete(order.id);
     logPixelError(`Purchase dispatch failed for order ${event.event_id}.`, error);
   }
 }
