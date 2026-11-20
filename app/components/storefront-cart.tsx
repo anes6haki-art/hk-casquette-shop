@@ -11,7 +11,6 @@ import {
 } from "react";
 import { submitOrder } from "@/app/actions";
 import { trackInitiateCheckout, trackPurchase } from "@/app/meta-pixel";
-import { createPurchaseEventId } from "@/lib/meta-purchase";
 import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import { getAbsoluteImageUrl } from "@/lib/image-url";
 import {
@@ -266,8 +265,7 @@ function CartDrawer({
     setIsSubmitting(true);
 
     try {
-      const purchaseEventId = createPurchaseEventId();
-      const result = await submitOrder(nextOrder, purchaseEventId, confirmationToken);
+      const result = await submitOrder(nextOrder, confirmationToken);
       if (result.ok !== true) {
         setError(result.message);
         return;

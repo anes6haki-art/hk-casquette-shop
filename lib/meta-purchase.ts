@@ -40,12 +40,8 @@ export function splitCustomerName(value: string) {
   };
 }
 
-export function createPurchaseEventId() {
-  return globalThis.crypto.randomUUID();
-}
-
-export function isValidPurchaseEventId(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+export function createPurchaseEventId(orderId: string) {
+  return `purchase_${orderId}`;
 }
 
 export function createPurchaseEvent(order: { id: string; totalPrice: number }, eventId: string) {

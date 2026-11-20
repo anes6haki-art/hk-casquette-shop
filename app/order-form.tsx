@@ -4,7 +4,6 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { submitOrder } from "./actions";
 import { trackInitiateCheckout, trackPurchase } from "./meta-pixel";
-import { createPurchaseEventId } from "@/lib/meta-purchase";
 import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import {
   DELIVERY_LABELS,
@@ -96,8 +95,7 @@ export default function OrderForm({
     setIsSubmitting(true);
 
     try {
-      const purchaseEventId = createPurchaseEventId();
-      const result = await submitOrder(nextOrder, purchaseEventId, confirmationToken);
+      const result = await submitOrder(nextOrder, confirmationToken);
       if (result.ok !== true) {
         setSubmissionError(result.message);
         return;

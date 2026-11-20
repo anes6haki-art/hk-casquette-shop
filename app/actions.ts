@@ -4,20 +4,15 @@ import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { createOrder } from "@/lib/orders";
 import { sendPurchaseToConversionsApi } from "@/lib/meta-conversions-api";
-import { isValidPurchaseEventId } from "@/lib/meta-purchase";
+import { createPurchaseEventId } from "@/lib/meta-purchase";
 import { normalizeAlgerianPhoneNumber } from "@/lib/order-phone";
 import type { NewOrder } from "@/lib/store-data";
 
 export async function submitOrder(
   input: NewOrder,
-  purchaseEventId: string,
   confirmationToken?: string,
 ) {
   try {
-    if (!isValidPurchaseEventId(purchaseEventId)) {
-      throw new Error("Invalid Purchase event ID.");
-    }
-
     const result = await createOrder(input, confirmationToken);
     if (result.status !== "created") return { ok: true as const, ...result };
 
@@ -25,6 +20,7 @@ export async function submitOrder(
     if (!order || typeof order.id !== "string" || order.id.length === 0) {
       throw new Error("Order creation returned an invalid order ID.");
     }
+    const purchaseEventId = createPurchaseEventId(order.id);
     let eventSourceUrl: string | null = null;
     let fbp: string | undefined;
     let fbc: string | undefined;
